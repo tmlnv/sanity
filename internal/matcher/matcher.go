@@ -3,19 +3,41 @@ package matcher
 import (
 	"regexp"
 	"strings"
+
+	"github.com/tmlnv/sanity/internal/config"
 )
 
-// Match checks if the address matches the desired pattern.
-func Match(address, prefix, suffix, regex string) bool {
-	if prefix != "" && !strings.HasPrefix(address, prefix) {
+type Matcher struct {
+	prefix string
+	suffix string
+	regex  *regexp.Regexp
+}
+
+func NewMatcher(cfg config.Config) *Matcher {
+	var re *regexp.Regexp
+	if cfg.Regex != "" {
+		re = regexp.MustCompile(cfg.Regex)
+	}
+
+	return &Matcher{
+		prefix: cfg.Prefix,
+		suffix: cfg.Suffix,
+		regex:  re,
+	}
+}
+
+func (m *Matcher) Match(address string) bool {
+	if m.prefix != "" && !strings.HasPrefix(address, m.prefix) {
 		return false
 	}
-	if suffix != "" && !strings.HasSuffix(address, suffix) {
+
+	if m.suffix != "" && !strings.HasSuffix(address, m.suffix) {
 		return false
 	}
-	if regex != "" {
-		matched, _ := regexp.MatchString(regex, address)
-		return matched
+
+	if m.regex != nil && !m.regex.MatchString(address) {
+		return false
 	}
+
 	return true
 }

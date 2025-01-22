@@ -2,48 +2,72 @@ package generator
 
 import (
 	"context"
-	"encoding/hex"
+	"os"
 	"sync"
+	"sync/atomic"
 
-	"github.com/charmbracelet/log"
-	solana "github.com/gagliardetto/solana-go"
+	"github.com/gagliardetto/solana-go"
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/logger"
 	"github.com/tmlnv/sanity/internal/matcher"
 )
 
-// StartGeneration starts the vanity address generation process.
-func StartGeneration(cfg *config.Config) {
-	ctx, cancel := context.WithCancel(context.Background())
-	if cfg.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, cfg.Timeout)
-	}
-	defer cancel()
+var (
+	totalGenerated uint64
+	totalFound     uint64
+)
 
+func Start(ctx context.Context, cfg config.Config) {
 	var wg sync.WaitGroup
-	semaphore := make(chan struct{}, cfg.Threads)
+	matcher := matcher.NewMatcher(cfg)
+
+	for i := 0; i < cfg.Concurrency; i++ {
+		wg.Add(1)
+		go worker(ctx, &wg, matcher, cfg)
+	}
+
+	wg.Wait()
+	logger.Info("Generation completed",
+		"total", atomic.LoadUint64(&totalGenerated),
+		"found", atomic.LoadUint64(&totalFound),
+	)
+}
+
+func worker(ctx context.Context, wg *sync.WaitGroup, m *matcher.Matcher, cfg config.Config) {
+	defer wg.Done()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Info("Generation stopped", "reason", ctx.Err())
 			return
 		default:
-			semaphore <- struct{}{}
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				defer func() { <-semaphore }()
-
-				// Generate a new Solana wallet
-				account := solana.NewWallet()
-				publicKey := account.PublicKey().String()
-
-				// Check if the address matches the desired pattern
-				if matcher.Match(publicKey, cfg.Prefix, cfg.Suffix, cfg.Regex) {
-					logger.LogResult(publicKey, hex.EncodeToString(account.PrivateKey))
-				}
-			}()
+			generateAndCheck(m, cfg)
 		}
+	}
+}
+
+func generateAndCheck(m *matcher.Matcher, cfg config.Config) {
+	wallet := solana.NewWallet()
+	address := wallet.PublicKey().String()
+
+	atomic.AddUint64(&totalGenerated, 1)
+
+	if m.Match(address) {
+		handleMatch(wallet, cfg)
+	}
+}
+
+func handleMatch(wallet *solana.Wallet, cfg config.Config) {
+	count := atomic.AddUint64(&totalFound, 1)
+
+	logger.Info("Vanity address found",
+		"address", wallet.PublicKey(),
+		"private", wallet.PrivateKey,
+		"attempts", atomic.LoadUint64(&totalGenerated),
+	)
+
+	if cfg.NumAddresses > 0 && count >= uint64(cfg.NumAddresses) {
+		logger.Info("Desired count reached - stopping generation")
+		os.Exit(0)
 	}
 }

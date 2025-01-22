@@ -1,9 +1,12 @@
+// cmd/sanity/main.go
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/generator"
@@ -11,45 +14,72 @@ import (
 	"github.com/tmlnv/sanity/internal/tui"
 )
 
+var Version = "1.0.0"
+
 func main() {
-	// Parse CLI flags
-	prefix := flag.String("prefix", "", "Desired prefix for the Solana address")
-	suffix := flag.String("suffix", "", "Desired suffix for the Solana address")
-	regex := flag.String("regex", "", "Desired regex pattern for the Solana address")
-	numWallets := flag.Int("wallets", 1, "Number of wallets to find (0 for infinite)")
-	timeout := flag.Duration("timeout", 0, "Timeout for the generation process (e.g., 10s, 5m)")
-	threads := flag.Int("threads", 0, "Number of threads to use (0 for automatic)")
-	logFile := flag.String("logfile", "results.log", "File to log results to")
-	quiet := flag.Bool("quiet", false, "Disable TUI and only log to file")
+	cfg := parseFlags()
+
+	if !cfg.FlagsProvided {
+		startInteractiveTUI()
+		return
+	}
+
+	initializeSystem(cfg)
+}
+
+func parseFlags() config.Config {
+	var cfg config.Config
+
+	flag.StringVar(&cfg.Prefix, "prefix", "", "Vanity prefix for Solana address")
+	flag.StringVar(&cfg.Suffix, "suffix", "", "Vanity suffix for Solana address")
+	flag.StringVar(&cfg.Regex, "regex", "", "Regex pattern to match")
+	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
+	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
+	flag.DurationVar(&cfg.Timeout, "timeout", 0, "Maximum search duration")
+	flag.StringVar(&cfg.LogFile, "logfile", "", "Path to log file")
+	versionFlag := flag.Bool("version", false, "Show version")
+
 	flag.Parse()
 
-	// Validate input
-	if *prefix == "" && *suffix == "" && *regex == "" {
-		fmt.Println("Please specify a prefix, suffix, or regex pattern.")
-		flag.Usage()
+	if *versionFlag {
+		fmt.Printf("sanity %s\n", Version)
+		os.Exit(0)
+	}
+
+	if cfg.Concurrency <= 0 {
+		cfg.Concurrency = runtime.NumCPU()
+	}
+
+	cfg.FlagsProvided = flag.NFlag() > 0
+	return cfg
+}
+
+func startInteractiveTUI() {
+	program := tui.NewProgram(tui.InitialModel())
+	if _, err := program.Run(); err != nil {
+		logger.Error("TUI failed", "error", err)
 		os.Exit(1)
 	}
+}
 
-	// Set up configuration
-	cfg := config.Config{
-		Prefix:     *prefix,
-		Suffix:     *suffix,
-		Regex:      *regex,
-		NumWallets: *numWallets,
-		Timeout:    *timeout,
-		Threads:    *threads,
-		LogFile:    *logFile,
-		Quiet:      *quiet,
+func initializeSystem(cfg config.Config) {
+	logger.Init(cfg.LogFile)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	if cfg.Timeout > 0 {
+		var timeoutCancel context.CancelFunc
+		ctx, timeoutCancel = context.WithTimeout(ctx, cfg.Timeout)
+		defer timeoutCancel()
 	}
 
-	// Initialize logger
-	logger.InitLogger(cfg.LogFile, !cfg.Quiet)
+	logger.Info("Starting vanity generation",
+		"prefix", cfg.Prefix,
+		"suffix", cfg.Suffix,
+		"regex", cfg.Regex,
+		"threads", cfg.Concurrency,
+		"timeout", cfg.Timeout,
+	)
 
-	// Start TUI if not in quiet mode
-	if !cfg.Quiet {
-		go tui.StartTUI(&cfg)
-	}
-
-	// Start vanity address generation
-	generator.StartGeneration(&cfg)
+	generator.Start(ctx, cfg)
 }

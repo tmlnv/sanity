@@ -5,22 +5,20 @@ go 1.23.4
 require (
 	github.com/charmbracelet/bubbles v0.14.0
 	github.com/charmbracelet/bubbletea v0.23.1
-	github.com/charmbracelet/lipgloss v0.7.1
-	github.com/charmbracelet/log v0.2.1
 	github.com/gagliardetto/solana-go v1.12.0
 )
 
 require (
 	filippo.io/edwards25519 v1.0.0-rc.1 // indirect
+	github.com/atotto/clipboard v0.1.4 // indirect
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/blendle/zapdriver v1.3.1 // indirect
-	github.com/charmbracelet/harmonica v0.2.0 // indirect
+	github.com/charmbracelet/lipgloss v0.7.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fatih/color v1.9.0 // indirect
 	github.com/gagliardetto/binary v0.8.0 // indirect
 	github.com/gagliardetto/treeout v0.1.4 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
@@ -40,6 +38,7 @@ require (
 	github.com/muesli/termenv v0.15.1 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/streamingfast/logging v0.0.0-20230608130331-f22c91403091 // indirect
+	github.com/stretchr/testify v1.8.2 // indirect
 	go.mongodb.org/mongo-driver v1.12.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect

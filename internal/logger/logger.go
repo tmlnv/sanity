@@ -1,35 +1,41 @@
+// internal/logger/logger.go
 package logger
 
 import (
+	"io"
+	"log"
 	"os"
 	"sync"
-
-	"github.com/charmbracelet/log"
 )
 
 var (
-	logFile *os.File
-	mu      sync.Mutex
+	instance *log.Logger
+	mu       sync.Mutex
 )
 
-// InitLogger initializes the logger.
-func InitLogger(logFilePath string, enableCLI bool) {
-	var err error
-	logFile, err = os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal("Failed to open log file", "error", err)
-	}
-
-	if !enableCLI {
-		log.SetOutput(logFile)
-	}
-}
-
-// LogResult logs the result to both the file and CLI.
-func LogResult(publicKey, privateKey string) {
+func Init(logFile string) {
 	mu.Lock()
 	defer mu.Unlock()
 
-	log.Info("Vanity address found", "publicKey", publicKey, "privateKey", privateKey)
-	logFile.WriteString(publicKey + "\n")
+	writers := []io.Writer{os.Stdout}
+	if logFile != "" {
+		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err == nil {
+			writers = append(writers, file)
+		}
+	}
+
+	instance = log.New(io.MultiWriter(writers...), "[sanity] ", log.LstdFlags|log.Lmsgprefix)
+}
+
+func Info(msg string, args ...interface{}) {
+	mu.Lock()
+	defer mu.Unlock()
+	instance.Printf("[INFO] "+msg, args...)
+}
+
+func Error(msg string, args ...interface{}) {
+	mu.Lock()
+	defer mu.Unlock()
+	instance.Printf("[ERROR] "+msg, args...)
 }
