@@ -36,7 +36,7 @@ func InitialModel() Model {
 		case 0:
 			t.Prompt = "Enter vanity prefix: "
 			t.Placeholder = "sol"
-			t.Validate = validateHexString
+			t.Validate = validateBase58String
 		case 1:
 			t.Prompt = "Number of addresses to find (0=infinite): "
 			t.Validate = validateNumber
@@ -52,11 +52,11 @@ func InitialModel() Model {
 	return m
 }
 
-func validateHexString(s string) error {
+func validateBase58String(s string) error {
 	if s == "" {
 		return nil
 	}
-	_, err := strconv.ParseUint(s, 16, 64)
+	_, err := strconv.ParseUint(s, 58, 64)
 	return err
 }
 
