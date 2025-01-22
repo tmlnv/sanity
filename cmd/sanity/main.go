@@ -72,7 +72,7 @@ func initializeSystem(cfg config.Config) {
 		defer timeoutCancel()
 	}
 
-	logger.Info("Starting vanity generation",
+	logger.Info("Starting vanity generation. ",
 		"prefix", cfg.Prefix,
 		"suffix", cfg.Suffix,
 		"regex", cfg.Regex,

@@ -36,6 +36,7 @@ func InitialModel() Model {
 		case 0:
 			t.Prompt = "Enter vanity prefix: "
 			t.Placeholder = "sol"
+			t.Validate = validateHexString
 		case 1:
 			t.Prompt = "Number of addresses to find (0=infinite): "
 			t.Validate = validateNumber
@@ -49,6 +50,14 @@ func InitialModel() Model {
 		m.inputs[i] = t
 	}
 	return m
+}
+
+func validateHexString(s string) error {
+	if s == "" {
+		return nil
+	}
+	_, err := strconv.ParseUint(s, 16, 64)
+	return err
 }
 
 func validateNumber(s string) error {

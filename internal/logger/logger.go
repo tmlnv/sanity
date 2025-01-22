@@ -27,14 +27,20 @@ func Init(logFile string) {
 	instance = log.New(io.MultiWriter(writers...), "[sanity] ", log.LstdFlags|log.Lmsgprefix)
 }
 
-func Info(msg string, args ...interface{}) {
+func Info(msg string, args ...any) {
 	mu.Lock()
 	defer mu.Unlock()
 	instance.Printf("[INFO] "+msg, args...)
 }
 
-func Error(msg string, args ...interface{}) {
+func Error(msg string, args ...any) {
 	mu.Lock()
 	defer mu.Unlock()
 	instance.Printf("[ERROR] "+msg, args...)
+}
+
+func Debug(msg string, args ...any) {
+	mu.Lock()
+	defer mu.Unlock()
+	instance.Printf("[DEBUG] "+msg, args...)
 }
