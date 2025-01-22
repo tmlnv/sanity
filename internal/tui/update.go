@@ -1,4 +1,3 @@
-// internal/tui/update.go
 package tui
 
 import (

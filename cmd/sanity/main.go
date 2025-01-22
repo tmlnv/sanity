@@ -1,4 +1,3 @@
-// cmd/sanity/main.go
 package main
 
 import (
@@ -36,7 +35,7 @@ func parseFlags() config.Config {
 	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
 	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
 	flag.DurationVar(&cfg.Timeout, "timeout", 0, "Maximum search duration")
-	flag.StringVar(&cfg.LogFile, "logfile", "", "Path to log file")
+	flag.StringVar(&cfg.LogFile, "logfile", "sanity.log", "Path to log file")
 	versionFlag := flag.Bool("version", false, "Show version")
 
 	flag.Parse()

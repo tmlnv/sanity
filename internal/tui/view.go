@@ -1,4 +1,3 @@
-// internal/tui/view.go
 package tui
 
 import (
