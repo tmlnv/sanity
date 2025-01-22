@@ -16,8 +16,8 @@ type model struct {
 	spinner  spinner.Model
 	progress progress.Model
 	stats    struct {
-		attempts int
-		matches  int
+		seconds int
+		matches int
 	}
 }
 
@@ -45,7 +45,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 	case tickMsg:
-		m.stats.attempts++
+		m.stats.seconds++
 		return m, tick()
 	}
 
@@ -57,8 +57,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	style := lipgloss.NewStyle().Padding(1, 2)
 	return style.Render(
-		fmt.Sprintf("%s Generating vanity addresses...\nAttempts: %d\nMatches: %d",
-			m.spinner.View(), m.stats.attempts, m.stats.matches),
+		fmt.Sprintf("%s Generating vanity addresses...\nSeconds: %d\nMatches: %d",
+			m.spinner.View(), m.stats.seconds, m.stats.matches),
 	)
 }
 
