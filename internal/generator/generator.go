@@ -5,6 +5,7 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/gagliardetto/solana-go"
 	"github.com/tmlnv/sanity/internal/config"
@@ -30,6 +31,10 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 		totalAttempts uint64 // Atomic counter for total attempts
 	)
 
+	// Ticker for periodic updates
+	ticker := time.NewTicker(500 * time.Millisecond) // Update every 500ms
+	defer ticker.Stop()
+
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
 		go func() {
@@ -38,8 +43,17 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 				select {
 				case <-ctx.Done():
 					return
+				case <-ticker.C:
+					// Send periodic update
+					if updateChan != nil {
+						updateChan <- StatsUpdate{
+							Stats: Stats{
+								Attempts: atomic.LoadUint64(&totalAttempts),
+								Found:    atomic.LoadUint64(&totalFound),
+							},
+						}
+					}
 				default:
-					// Increment attempts counter
 					atomic.AddUint64(&totalAttempts, 1)
 					generateAndCheck(matcher, cfg, updateChan, &totalFound, &totalAttempts)
 				}
@@ -64,7 +78,7 @@ func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- S
 
 		logger.Info("Vanity address found",
 			"address", address,
-			"private", wallet.PrivateKey,
+			"private", wallet.PrivateKey.String(),
 			"attempts", attempts,
 		)
 
