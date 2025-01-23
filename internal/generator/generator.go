@@ -13,8 +13,8 @@ import (
 )
 
 type Stats struct {
-	Attempts uint64
-	Found    uint64
+	Attempts uint64 // Total attempts across all workers
+	Found    uint64 // Total found addresses
 }
 
 type StatsUpdate struct {
@@ -24,9 +24,10 @@ type StatsUpdate struct {
 
 func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate) {
 	var (
-		wg         sync.WaitGroup
-		matcher    = matcher.NewMatcher(cfg)
-		totalFound uint64
+		wg            sync.WaitGroup
+		matcher       = matcher.NewMatcher(cfg)
+		totalFound    uint64
+		totalAttempts uint64 // Atomic counter for total attempts
 	)
 
 	for i := 0; i < cfg.Concurrency; i++ {
@@ -38,32 +39,39 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 				case <-ctx.Done():
 					return
 				default:
-					generateAndCheck(matcher, cfg, updateChan, &totalFound)
+					// Increment attempts counter
+					atomic.AddUint64(&totalAttempts, 1)
+					generateAndCheck(matcher, cfg, updateChan, &totalFound, &totalAttempts)
 				}
 			}
 		}()
 	}
 
 	wg.Wait()
-	logger.Info("Generation completed", "found", totalFound)
+	logger.Info("Generation completed",
+		"attempts", atomic.LoadUint64(&totalAttempts),
+		"found", totalFound,
+	)
 }
 
-func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- StatsUpdate, totalFound *uint64) {
+func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64) {
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
 	if m.Match(address) {
 		count := atomic.AddUint64(totalFound, 1)
+		attempts := atomic.LoadUint64(totalAttempts)
+
 		logger.Info("Vanity address found",
 			"address", address,
 			"private", wallet.PrivateKey,
-			"attempts", count,
+			"attempts", attempts,
 		)
 
 		if updateChan != nil {
 			updateChan <- StatsUpdate{
 				Stats: Stats{
-					Attempts: count,
+					Attempts: attempts,
 					Found:    count,
 				},
 				LastResult: address,
