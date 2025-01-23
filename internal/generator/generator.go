@@ -2,7 +2,6 @@ package generator
 
 import (
 	"context"
-	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -87,6 +86,7 @@ func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- S
 		)
 
 		if updateChan != nil {
+			// Send update before checking for exit condition
 			updateChan <- StatsUpdate{
 				Stats: Stats{
 					Attempts: attempts,
@@ -98,10 +98,8 @@ func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- S
 
 		if cfg.NumAddresses > 0 && count >= uint64(cfg.NumAddresses) {
 			logger.Info("Desired count reached - stopping generation")
-			if updateChan != nil {
-				close(updateChan) // Close the channel to signal completion
-			}
-			os.Exit(0)
+			// Let the normal shutdown process handle exit
+			return
 		}
 	}
 }

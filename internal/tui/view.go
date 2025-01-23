@@ -53,7 +53,8 @@ func (m Model) configView() string {
 
 func (m Model) generationView() string {
 	var b strings.Builder
-	b.WriteString(fmt.Sprintf("\n%s Generating addresses...\n\n", m.spinner.View()))
+	// Use spinner.View() directly without newline to preserve animation
+	b.WriteString(fmt.Sprintf("%s Generating addresses...\n\n", m.spinner.View()))
 	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
 	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
 
@@ -66,7 +67,9 @@ func (m Model) generationView() string {
 
 	b.WriteString(helpStyle.Render("\nPress Ctrl+C to exit"))
 
-	return lipgloss.NewStyle().Padding(1, 2).Render(b.String())
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		Render(b.String())
 }
 
 func NewProgram(m Model) *tea.Program {

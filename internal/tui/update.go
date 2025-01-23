@@ -24,21 +24,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.updateInputs(msg)
 }
 
-func (m *Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
+// Add this helper method to handle final updates
+func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
+	m.stats = update.Stats
+	if update.LastResult != "" {
+		m.lastResults = append(m.lastResults, update.LastResult)
+		if len(m.lastResults) > 5 {
+			m.lastResults = m.lastResults[1:]
+		}
+	}
+
+	// Check if we've reached the target count
+	if m.config.NumAddresses > 0 &&
+		uint64(m.config.NumAddresses) <= m.stats.Found {
+		return tea.Quit
+	}
+
+	return m.listenForUpdates()
+}
+
+// Update the updateGeneration case
+func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.Type == tea.KeyCtrlC {
 			return m, tea.Quit
 		}
 	case generator.StatsUpdate:
-		m.stats = msg.Stats
-		if msg.LastResult != "" {
-			m.lastResults = append(m.lastResults, msg.LastResult)
-			if len(m.lastResults) > 5 {
-				m.lastResults = m.lastResults[1:]
-			}
-		}
-		return m, m.listenForUpdates()
+		return m, m.handleStatsUpdate(msg)
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
