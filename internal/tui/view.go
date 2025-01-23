@@ -9,49 +9,46 @@ import (
 )
 
 var (
-	titleStyle = lipgloss.NewStyle().
+	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
+	blurredStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	helpStyle    = blurredStyle.Copy()
+	titleStyle   = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#FAFAFA")).
 			Background(lipgloss.Color("#7D56F4")).
 			Padding(0, 1)
 	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
-	helpStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 )
 
 func (m Model) View() string {
 	if m.err != nil {
 		return errorStyle.Render(fmt.Sprintf("Error: %v", m.err))
 	}
-
 	if m.generating {
 		return m.generationView()
 	}
-
-	if m.step >= len(m.inputs) {
-		return m.configCompleteView()
-	}
-
 	return m.configView()
 }
 
 func (m Model) configView() string {
-	return fmt.Sprintf(
-		"%s\n\n%s\n\n%s",
-		titleStyle.Render("Solana Vanity Address Generator"),
-		m.inputs[m.step].View(),
-		helpStyle.Render("(esc to quit | enter to continue)"),
-	)
-}
-
-func (m Model) configCompleteView() string {
 	var b strings.Builder
-	b.WriteString(titleStyle.Render("Configuration Complete!"))
+	b.WriteString(titleStyle.Render("Solana Vanity Address Generator"))
 	b.WriteString("\n\n")
-	b.WriteString(fmt.Sprintf("Prefix: %s\n", m.config.Prefix))
-	b.WriteString(fmt.Sprintf("Count: %d\n", m.config.NumAddresses))
-	b.WriteString(fmt.Sprintf("Threads: %d\n", m.config.Concurrency))
-	b.WriteString(fmt.Sprintf("Timeout: %s\n", m.config.Timeout))
-	b.WriteString("\nPress any key to start generation...")
-	return b.String()
+
+	for i := range m.inputs {
+		b.WriteString(m.inputs[i].View())
+		if i < len(m.inputs)-1 {
+			b.WriteRune('\n')
+		}
+	}
+
+	button := blurredStyle.Render("[ Submit ]")
+	if m.step == len(m.inputs) {
+		button = focusedStyle.Render("[ Submit ]")
+	}
+	b.WriteString("\n\n" + button + "\n")
+	b.WriteString(helpStyle.Render("(esc to quit | tab to navigate)"))
+
+	return lipgloss.NewStyle().Padding(1, 2).Render(b.String())
 }
 
 func (m Model) generationView() string {
@@ -69,9 +66,7 @@ func (m Model) generationView() string {
 
 	b.WriteString(helpStyle.Render("\nPress Ctrl+C to exit"))
 
-	return lipgloss.NewStyle().
-		Padding(1, 2).
-		Render(b.String())
+	return lipgloss.NewStyle().Padding(1, 2).Render(b.String())
 }
 
 func NewProgram(m Model) *tea.Program {

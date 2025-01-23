@@ -16,11 +16,11 @@ import (
 )
 
 type Model struct {
-	step        int
-	config      config.Config
 	inputs      []textinput.Model
+	step        int
 	spinner     spinner.Model
 	generating  bool
+	config      config.Config
 	stats       generator.Stats
 	lastResults []string
 	err         error
@@ -38,50 +38,46 @@ func InitialModel() Model {
 			spinner.WithSpinner(spinner.Dot),
 			spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("206"))),
 		),
-		lastResults: make([]string, 0),
-		updateChan:  make(chan generator.StatsUpdate, 100),
+		updateChan: make(chan generator.StatsUpdate, 100),
 	}
 
-	var t textinput.Model
-	for i := range m.inputs {
-		t = textinput.New()
-		t.CharLimit = 32
-		t.PromptStyle = t.PromptStyle.Faint(true)
+	inputs := []struct {
+		index      int
+		prompt     string
+		validation func(string) error
+	}{
+		{0, "Vanity prefix (e.g. 'sol'):", nil},
+		{1, "Number of addresses to find (0=infinite):", validateNumber},
+		{2, fmt.Sprintf("Threads (0=auto, CPUs available: %d):", runtime.NumCPU()), validateNumber},
+		{3, "Timeout (e.g. 30s, 5m):", validateDuration},
+	}
 
-		switch i {
-		case 0:
-			t.Prompt = "Enter vanity prefix: "
-			t.Placeholder = "sol"
-		case 1:
-			t.Prompt = "Number of addresses to find (0=infinite): "
-			t.Validate = ValidateNumber
-		case 2:
-			t.Prompt = fmt.Sprintf("Threads to use (%d available): ", runtime.NumCPU())
-			t.Validate = ValidateNumber
-		case 3:
-			t.Prompt = "Timeout (e.g. 30s, 5m): "
-			t.Validate = ValidateDuration
+	for _, in := range inputs {
+		ti := textinput.New()
+		ti.Prompt = in.prompt
+		ti.PromptStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+		if in.validation != nil {
+			ti.Validate = in.validation
 		}
-		m.inputs[i] = t
+		m.inputs[in.index] = ti
 	}
+
+	m.inputs[0].Focus()
 	return m
 }
 
 func (m *Model) startGeneration() {
-	// Initialize logger before starting generator
 	logger.Init(m.config.LogFile)
-
 	ctx, cancel := context.WithCancel(context.Background())
 	if m.config.Timeout > 0 {
 		ctx, cancel = context.WithTimeout(ctx, m.config.Timeout)
 	}
 	defer cancel()
 
-	// Start generator with the update channel
 	generator.Start(ctx, m.config, m.updateChan)
 }
 
-func ValidateNumber(s string) error {
+func validateNumber(s string) error {
 	if s == "" || s == "0" {
 		return nil
 	}
@@ -89,10 +85,13 @@ func ValidateNumber(s string) error {
 	return err
 }
 
-func ValidateDuration(s string) error {
+func validateDuration(s string) error {
 	if s == "" {
 		return nil
 	}
 	_, err := time.ParseDuration(s)
-	return err
+	if err != nil {
+		return fmt.Errorf("invalid duration format (e.g., 30s, 5m)")
+	}
+	return nil
 }

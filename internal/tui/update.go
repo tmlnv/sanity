@@ -1,11 +1,14 @@
 package tui
 
 import (
+	"runtime"
 	"strconv"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/tmlnv/sanity/internal/generator"
 )
 
 func (m Model) Init() tea.Cmd {
@@ -13,54 +16,128 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmd tea.Cmd
+	if m.generating {
+		return m.updateGeneration(msg)
+	}
+	return m.updateInputs(msg)
+}
 
+func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC {
+			return m, tea.Quit
+		}
+	case generator.StatsUpdate:
+		m.stats = msg.Stats
+		if msg.LastResult != "" {
+			m.lastResults = append(m.lastResults, msg.LastResult)
+			if len(m.lastResults) > 5 {
+				m.lastResults = m.lastResults[1:]
+			}
+		}
+		return m, m.listenForUpdates()
+	case spinner.TickMsg:
+		var cmd tea.Cmd
+		m.spinner, cmd = m.spinner.Update(msg)
+		return m, cmd
+	}
+	return m, nil
+}
+
+func (m Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyEnter:
-			if m.step < len(m.inputs) {
-				return m.handleInput()
-			}
-			return m, tea.Quit
-
 		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
-		}
 
-	case errMsg:
-		m.err = msg
-		return m, nil
+		case tea.KeyEnter:
+			if m.step == len(m.inputs) {
+				m.parseInputs()
+				m.generating = true
+				go m.startGeneration()
+				return m, tea.Batch(
+					m.spinner.Tick,
+					m.listenForUpdates(),
+				)
+			}
+			return m.handleInput(msg)
+
+		case tea.KeyTab, tea.KeyShiftTab, tea.KeyUp, tea.KeyDown:
+			return m.handleNavigation(msg)
+		}
 	}
 
+	return m.updateFocusedInput(msg)
+}
+
+func (m *Model) parseInputs() {
+	m.config.Prefix = m.inputs[0].Value()
+
+	if val := m.inputs[1].Value(); val != "" {
+		m.config.NumAddresses, _ = strconv.Atoi(val)
+	}
+
+	if val := m.inputs[2].Value(); val != "" {
+		if threads, _ := strconv.Atoi(val); threads > 0 {
+			m.config.Concurrency = threads
+		} else {
+			m.config.Concurrency = runtime.NumCPU()
+		}
+	}
+
+	if val := m.inputs[3].Value(); val != "" {
+		m.config.Timeout, _ = time.ParseDuration(val)
+	}
+}
+
+func (m Model) handleInput(msg tea.KeyMsg) (Model, tea.Cmd) {
+	if m.step < len(m.inputs)-1 {
+		m.step++
+		m.inputs[m.step].Focus()
+		return m, textinput.Blink
+	}
+	return m, nil
+}
+
+func (m Model) handleNavigation(msg tea.KeyMsg) (Model, tea.Cmd) {
+	s := msg.String()
+	if s == "up" || s == "shift+tab" {
+		m.step--
+	} else {
+		m.step++
+	}
+
+	if m.step > len(m.inputs) {
+		m.step = 0
+	} else if m.step < 0 {
+		m.step = len(m.inputs)
+	}
+
+	cmds := make([]tea.Cmd, len(m.inputs))
+	for i := 0; i < len(m.inputs); i++ {
+		if i == m.step {
+			cmds[i] = m.inputs[i].Focus()
+			continue
+		}
+		m.inputs[i].Blur()
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func (m Model) updateFocusedInput(msg tea.Msg) (Model, tea.Cmd) {
+	var cmd tea.Cmd
 	m.inputs[m.step], cmd = m.inputs[m.step].Update(msg)
 	return m, cmd
 }
 
-func (m Model) handleInput() (Model, tea.Cmd) {
-	switch m.step {
-	case 0:
-		m.config.Prefix = m.inputs[0].Value()
-	case 1:
-		if val := m.inputs[1].Value(); val != "" {
-			m.config.NumAddresses, _ = strconv.Atoi(val)
+func (m Model) listenForUpdates() tea.Cmd {
+	return func() tea.Msg {
+		update, ok := <-m.updateChan
+		if !ok {
+			return tea.Quit
 		}
-	case 2:
-		if val := m.inputs[2].Value(); val != "" {
-			m.config.Concurrency, _ = strconv.Atoi(val)
-		}
-	case 3:
-		if val := m.inputs[3].Value(); val != "" {
-			m.config.Timeout, _ = time.ParseDuration(val)
-		}
+		return update
 	}
-
-	if m.step < len(m.inputs)-1 {
-		m.step++
-		return m, textinput.Blink
-	}
-
-	return m, tea.Quit
 }
-
-type errMsg error
