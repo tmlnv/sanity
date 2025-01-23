@@ -1,9 +1,11 @@
 package logger
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -29,22 +31,44 @@ func Init(logFile string) {
 	instance = log.New(io.MultiWriter(writers...), "[sanity] ", log.LstdFlags|log.Lmsgprefix)
 }
 
-// Info logs an informational message.
+// Info logs an informational message with key-value pairs.
 func Info(msg string, args ...interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 	if instance == nil {
 		panic("logger not initialized")
 	}
-	instance.Printf("[INFO] "+msg, args...)
+
+	// Format key-value pairs
+	var b strings.Builder
+	b.WriteString("[INFO] ")
+	b.WriteString(msg)
+	for i := 0; i < len(args); i += 2 {
+		if i+1 < len(args) {
+			b.WriteString(fmt.Sprintf(" %s=%v", args[i], args[i+1]))
+		}
+	}
+
+	instance.Println(b.String())
 }
 
-// Error logs an error message.
+// Error logs an error message with key-value pairs.
 func Error(msg string, args ...interface{}) {
 	mu.Lock()
 	defer mu.Unlock()
 	if instance == nil {
 		panic("logger not initialized")
 	}
-	instance.Printf("[ERROR] "+msg, args...)
+
+	// Format key-value pairs
+	var b strings.Builder
+	b.WriteString("[ERROR] ")
+	b.WriteString(msg)
+	for i := 0; i < len(args); i += 2 {
+		if i+1 < len(args) {
+			b.WriteString(fmt.Sprintf(" %s=%v", args[i], args[i+1]))
+		}
+	}
+
+	instance.Println(b.String())
 }

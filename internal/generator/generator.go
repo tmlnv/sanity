@@ -28,7 +28,7 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 		wg            sync.WaitGroup
 		matcher       = matcher.NewMatcher(cfg)
 		totalFound    uint64
-		totalAttempts uint64 // Atomic counter for total attempts
+		totalAttempts uint64
 	)
 
 	// Ticker for periodic updates
@@ -42,7 +42,7 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 			for {
 				select {
 				case <-ctx.Done():
-					return
+					return // Stop when context is canceled
 				case <-ticker.C:
 					// Send periodic update
 					if updateChan != nil {
@@ -94,6 +94,9 @@ func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- S
 
 		if cfg.NumAddresses > 0 && count >= uint64(cfg.NumAddresses) {
 			logger.Info("Desired count reached - stopping generation")
+			if updateChan != nil {
+				close(updateChan) // Close the channel to signal completion
+			}
 			os.Exit(0)
 		}
 	}

@@ -6,15 +6,22 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/tmlnv/sanity/internal/config"
+	"github.com/tmlnv/sanity/internal/generator"
 )
 
 type Model struct {
-	step   int
-	config config.Config
-	inputs []textinput.Model
-	err    error
+	step        int
+	config      config.Config
+	inputs      []textinput.Model
+	spinner     spinner.Model
+	generating  bool
+	stats       generator.Stats
+	lastResults []string
+	err         error
 }
 
 func InitialModel() Model {
@@ -24,6 +31,11 @@ func InitialModel() Model {
 			Concurrency:  runtime.NumCPU(),
 		},
 		inputs: make([]textinput.Model, 4),
+		spinner: spinner.New(
+			spinner.WithSpinner(spinner.Dot),
+			spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("206"))),
+		),
+		lastResults: make([]string, 0),
 	}
 
 	var t textinput.Model

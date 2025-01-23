@@ -258,7 +258,10 @@ func (m *model) startGeneration() {
 	// Initialize logger before starting generator
 	logger.Init(m.config.LogFile)
 
-	ctx, cancel := createContext(m.config)
+	ctx, cancel := context.WithCancel(context.Background())
+	if m.config.Timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, m.config.Timeout)
+	}
 	defer cancel()
 
 	// Start generator with the update channel
@@ -267,7 +270,12 @@ func (m *model) startGeneration() {
 
 func (m model) listenForUpdates() tea.Cmd {
 	return func() tea.Msg {
-		return <-m.updateChan
+		update, ok := <-m.updateChan
+		if !ok {
+			// Channel closed, generation completed
+			return tea.Quit
+		}
+		return update
 	}
 }
 
