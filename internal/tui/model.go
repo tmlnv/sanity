@@ -36,31 +36,22 @@ func InitialModel() Model {
 		case 0:
 			t.Prompt = "Enter vanity prefix: "
 			t.Placeholder = "sol"
-			t.Validate = validateBase58String
 		case 1:
 			t.Prompt = "Number of addresses to find (0=infinite): "
-			t.Validate = validateNumber
+			t.Validate = ValidateNumber
 		case 2:
 			t.Prompt = fmt.Sprintf("Threads to use (%d available): ", runtime.NumCPU())
-			t.Validate = validateNumber
+			t.Validate = ValidateNumber
 		case 3:
 			t.Prompt = "Timeout (e.g. 30s, 5m): "
-			t.Validate = validateDuration
+			t.Validate = ValidateDuration
 		}
 		m.inputs[i] = t
 	}
 	return m
 }
 
-func validateBase58String(s string) error {
-	if s == "" {
-		return nil
-	}
-	_, err := strconv.ParseUint(s, 58, 64)
-	return err
-}
-
-func validateNumber(s string) error {
+func ValidateNumber(s string) error {
 	if s == "" || s == "0" {
 		return nil
 	}
@@ -68,7 +59,7 @@ func validateNumber(s string) error {
 	return err
 }
 
-func validateDuration(s string) error {
+func ValidateDuration(s string) error {
 	if s == "" {
 		return nil
 	}

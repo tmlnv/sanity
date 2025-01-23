@@ -12,62 +12,67 @@ import (
 	"github.com/tmlnv/sanity/internal/matcher"
 )
 
-var (
-	totalGenerated uint64
-	totalFound     uint64
-)
+type Stats struct {
+	Attempts uint64
+	Found    uint64
+}
 
-func Start(ctx context.Context, cfg config.Config) {
-	var wg sync.WaitGroup
-	matcher := matcher.NewMatcher(cfg)
+type StatsUpdate struct {
+	Stats      Stats
+	LastResult string
+}
+
+func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate) {
+	var (
+		wg         sync.WaitGroup
+		matcher    = matcher.NewMatcher(cfg)
+		totalFound uint64
+	)
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
-		go worker(ctx, &wg, matcher, cfg)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+					generateAndCheck(matcher, cfg, updateChan, &totalFound)
+				}
+			}
+		}()
 	}
 
 	wg.Wait()
-	logger.Info("Generation completed",
-		"total", atomic.LoadUint64(&totalGenerated),
-		"found", atomic.LoadUint64(&totalFound),
-	)
+	logger.Info("Generation completed", "found", totalFound)
 }
 
-func worker(ctx context.Context, wg *sync.WaitGroup, m *matcher.Matcher, cfg config.Config) {
-	defer wg.Done()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			generateAndCheck(m, cfg)
-		}
-	}
-}
-
-func generateAndCheck(m *matcher.Matcher, cfg config.Config) {
+func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- StatsUpdate, totalFound *uint64) {
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
-	atomic.AddUint64(&totalGenerated, 1)
-
 	if m.Match(address) {
-		handleMatch(wallet, cfg)
-	}
-}
+		count := atomic.AddUint64(totalFound, 1)
+		logger.Info("Vanity address found",
+			"address", address,
+			"private", wallet.PrivateKey,
+			"attempts", count,
+		)
 
-func handleMatch(wallet *solana.Wallet, cfg config.Config) {
-	count := atomic.AddUint64(&totalFound, 1)
+		if updateChan != nil {
+			updateChan <- StatsUpdate{
+				Stats: Stats{
+					Attempts: count,
+					Found:    count,
+				},
+				LastResult: address,
+			}
+		}
 
-	logger.Info("Vanity address found",
-		"address", wallet.PublicKey(),
-		"private", wallet.PrivateKey,
-		"attempts", atomic.LoadUint64(&totalGenerated),
-	)
-
-	if cfg.NumAddresses > 0 && count >= uint64(cfg.NumAddresses) {
-		logger.Info("Desired count reached - stopping generation")
-		os.Exit(0)
+		if cfg.NumAddresses > 0 && count >= uint64(cfg.NumAddresses) {
+			logger.Info("Desired count reached - stopping generation")
+			os.Exit(0)
+		}
 	}
 }
