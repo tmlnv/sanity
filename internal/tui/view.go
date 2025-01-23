@@ -42,7 +42,7 @@ func (m Model) configView() string {
 	}
 
 	button := blurredStyle.Render("[ Submit ]")
-	if m.step == len(m.inputs) {
+	if m.step == submitStep {
 		button = focusedStyle.Render("[ Submit ]")
 	}
 	b.WriteString("\n\n" + button + "\n")

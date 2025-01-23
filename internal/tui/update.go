@@ -11,6 +11,8 @@ import (
 	"github.com/tmlnv/sanity/internal/generator"
 )
 
+const submitStep = 4
+
 func (m Model) Init() tea.Cmd {
 	return textinput.Blink
 }
@@ -22,7 +24,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.updateInputs(msg)
 }
 
-func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		if msg.Type == tea.KeyCtrlC {
@@ -45,7 +47,7 @@ func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
@@ -53,7 +55,7 @@ func (m Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case tea.KeyEnter:
-			if m.step == len(m.inputs) {
+			if m.step == submitStep {
 				m.parseInputs()
 				m.generating = true
 				go m.startGeneration()
@@ -92,7 +94,7 @@ func (m *Model) parseInputs() {
 	}
 }
 
-func (m Model) handleInput(msg tea.KeyMsg) (Model, tea.Cmd) {
+func (m *Model) handleInput(msg tea.KeyMsg) (*Model, tea.Cmd) {
 	if m.step < len(m.inputs)-1 {
 		m.step++
 		m.inputs[m.step].Focus()
@@ -101,7 +103,7 @@ func (m Model) handleInput(msg tea.KeyMsg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleNavigation(msg tea.KeyMsg) (Model, tea.Cmd) {
+func (m *Model) handleNavigation(msg tea.KeyMsg) (*Model, tea.Cmd) {
 	s := msg.String()
 	if s == "up" || s == "shift+tab" {
 		m.step--
@@ -109,24 +111,34 @@ func (m Model) handleNavigation(msg tea.KeyMsg) (Model, tea.Cmd) {
 		m.step++
 	}
 
-	if m.step > len(m.inputs) {
+	// Keep step in valid range [0, submitStep]
+	if m.step > submitStep {
 		m.step = 0
 	} else if m.step < 0 {
-		m.step = len(m.inputs)
+		m.step = submitStep
 	}
 
-	cmds := make([]tea.Cmd, len(m.inputs))
-	for i := 0; i < len(m.inputs); i++ {
-		if i == m.step {
-			cmds[i] = m.inputs[i].Focus()
-			continue
+	// Only update focus for input fields
+	if m.step < len(m.inputs) {
+		cmds := make([]tea.Cmd, len(m.inputs))
+		for i := 0; i < len(m.inputs); i++ {
+			if i == m.step {
+				cmds[i] = m.inputs[i].Focus()
+			} else {
+				m.inputs[i].Blur()
+			}
 		}
-		m.inputs[i].Blur()
+		return m, tea.Batch(cmds...)
 	}
-	return m, tea.Batch(cmds...)
+
+	return m, nil
 }
 
-func (m Model) updateFocusedInput(msg tea.Msg) (Model, tea.Cmd) {
+func (m *Model) updateFocusedInput(msg tea.Msg) (*Model, tea.Cmd) {
+	if m.step >= len(m.inputs) {
+		return m, nil
+	}
+
 	var cmd tea.Cmd
 	m.inputs[m.step], cmd = m.inputs[m.step].Update(msg)
 	return m, cmd
