@@ -66,6 +66,10 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 		"attempts", atomic.LoadUint64(&totalAttempts),
 		"found", totalFound,
 	)
+
+	if updateChan != nil {
+		close(updateChan) // Close the channel to signal completion
+	}
 }
 
 func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64) {

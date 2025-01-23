@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/generator"
+	"github.com/tmlnv/sanity/internal/logger"
 )
 
 type Model struct {
@@ -22,6 +24,7 @@ type Model struct {
 	stats       generator.Stats
 	lastResults []string
 	err         error
+	updateChan  chan generator.StatsUpdate
 }
 
 func InitialModel() Model {
@@ -36,6 +39,7 @@ func InitialModel() Model {
 			spinner.WithStyle(lipgloss.NewStyle().Foreground(lipgloss.Color("206"))),
 		),
 		lastResults: make([]string, 0),
+		updateChan:  make(chan generator.StatsUpdate, 100),
 	}
 
 	var t textinput.Model
@@ -61,6 +65,20 @@ func InitialModel() Model {
 		m.inputs[i] = t
 	}
 	return m
+}
+
+func (m *Model) startGeneration() {
+	// Initialize logger before starting generator
+	logger.Init(m.config.LogFile)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	if m.config.Timeout > 0 {
+		ctx, cancel = context.WithTimeout(ctx, m.config.Timeout)
+	}
+	defer cancel()
+
+	// Start generator with the update channel
+	generator.Start(ctx, m.config, m.updateChan)
 }
 
 func ValidateNumber(s string) error {

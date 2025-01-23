@@ -1,14 +1,11 @@
 package tui
 
 import (
-	"context"
 	"strconv"
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/tmlnv/sanity/internal/generator"
-	"github.com/tmlnv/sanity/internal/logger"
 )
 
 func (m Model) Init() tea.Cmd {
@@ -67,17 +64,3 @@ func (m Model) handleInput() (Model, tea.Cmd) {
 }
 
 type errMsg error
-
-func (m *model) startGeneration() {
-	// Initialize logger before starting generator
-	logger.Init(m.config.LogFile)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	if m.config.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, m.config.Timeout)
-	}
-	defer cancel()
-
-	// Start generator with the update channel
-	generator.Start(ctx, m.config, m.updateChan)
-}
