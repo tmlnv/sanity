@@ -74,7 +74,7 @@ func (m *Model) startGeneration() {
 	}
 	defer cancel()
 
-	generator.Start(ctx, m.config, m.updateChan)
+	generator.Start(ctx, cancel, m.config, m.updateChan)
 }
 
 func validateNumber(s string) error {
