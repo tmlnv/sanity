@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 )
@@ -29,6 +30,15 @@ func Init(logFile string) {
 	}
 
 	instance = log.New(io.MultiWriter(writers...), "[sanity] ", log.LstdFlags|log.Lmsgprefix)
+}
+
+// getGoroutineID returns the current goroutine ID.
+func getGoroutineID() uint64 {
+	b := make([]byte, 64)
+	b = b[:runtime.Stack(b, false)]
+	var id uint64
+	fmt.Sscanf(string(b), "goroutine %d", &id)
+	return id
 }
 
 // Info logs an informational message with key-value pairs.
@@ -63,6 +73,27 @@ func Error(msg string, args ...interface{}) {
 	// Format key-value pairs
 	var b strings.Builder
 	b.WriteString("[ERROR] ")
+	b.WriteString(msg)
+	for i := 0; i < len(args); i += 2 {
+		if i+1 < len(args) {
+			b.WriteString(fmt.Sprintf(" %s=%v", args[i], args[i+1]))
+		}
+	}
+
+	instance.Println(b.String())
+}
+
+// Debug logs an error message with key-value pairs.
+func Debug(msg string, args ...interface{}) {
+	mu.Lock()
+	defer mu.Unlock()
+	if instance == nil {
+		panic("logger not initialized")
+	}
+
+	// Format key-value pairs
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("[DEBUG] [GoroutineID: %d] ", getGoroutineID()))
 	b.WriteString(msg)
 	for i := 0; i < len(args); i += 2 {
 		if i+1 < len(args) {

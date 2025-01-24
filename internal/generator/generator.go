@@ -22,7 +22,7 @@ type StatsUpdate struct {
 	LastResult string
 }
 
-func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, updateChan chan<- StatsUpdate) {
+func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, updateChan chan<- StatsUpdate, isTui bool) {
 	var (
 		wg            sync.WaitGroup
 		matcher       = matcher.NewMatcher(cfg)
@@ -36,7 +36,7 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
-		go worker(ctx, calcel, &wg, cfg, ticker, updateChan, totalAttempts, totalFound, matcher)
+		go worker(ctx, calcel, &wg, cfg, ticker, updateChan, totalAttempts, totalFound, matcher, isTui)
 	}
 
 	wg.Wait()
@@ -50,12 +50,14 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 	}
 }
 
-func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts uint64, totalFound uint64, matcher *matcher.Matcher) {
+func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts uint64, totalFound uint64, matcher *matcher.Matcher, isTui bool) {
 	defer wg.Done()
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Info("Generation stopped due to cancellation", "Context", ctx)
+			if !isTui {
+				logger.Debug("Generation stopped due to cancellation", "Context", ctx)
+			}
 			return // Stop when context is canceled
 		case <-ticker.C:
 			// Send periodic update
@@ -69,9 +71,11 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 			}
 		default:
 			atomic.AddUint64(&totalAttempts, 1)
-			generateAndCheck(matcher, updateChan, &totalFound, &totalAttempts)
+			generateAndCheck(matcher, updateChan, &totalFound, &totalAttempts, isTui)
 			if cfg.NumAddresses > 0 && totalFound >= uint64(cfg.NumAddresses) {
-				logger.Info("Desired count reached - stopping generation")
+				if !isTui {
+					logger.Debug("Desired count reached - stopping generation")
+				}
 				cancel() // Stop all workers
 				return
 			}
@@ -79,7 +83,7 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 	}
 }
 
-func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64) (isFinished bool) {
+func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64, isTui bool) (isFinished bool) {
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
@@ -87,12 +91,13 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 		count := atomic.AddUint64(totalFound, 1)
 		attempts := atomic.LoadUint64(totalAttempts)
 
-		logger.Info("Vanity address found",
-			"address", address,
-			"private", wallet.PrivateKey.String(),
-			"attempts", attempts,
-		)
-
+		if !isTui {
+			logger.Info("Vanity address found",
+				"address", address,
+				"private", wallet.PrivateKey.String(),
+				"attempts", attempts,
+			)
+		}
 		if updateChan != nil {
 			// Send update before checking for exit condition
 			updateChan <- StatsUpdate{
