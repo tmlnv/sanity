@@ -36,29 +36,7 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for {
-				select {
-				case <-ctx.Done():
-					logger.Info("Generation stopped due to cancellation", "Context", ctx)
-					return // Stop when context is canceled
-				case <-ticker.C:
-					// Send periodic update
-					if updateChan != nil {
-						updateChan <- StatsUpdate{
-							Stats: Stats{
-								Attempts: atomic.LoadUint64(&totalAttempts),
-								Found:    atomic.LoadUint64(&totalFound),
-							},
-						}
-					}
-				default:
-					atomic.AddUint64(&totalAttempts, 1)
-					generateAndCheck(matcher, cfg, updateChan, &totalFound, &totalAttempts)
-				}
-			}
-		}()
+		go worker(ctx, &wg, cfg, ticker, updateChan, totalAttempts, totalFound, matcher)
 	}
 
 	wg.Wait()
@@ -72,7 +50,34 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 	}
 }
 
-func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64) {
+func worker(ctx context.Context, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts uint64, totalFound uint64, matcher *matcher.Matcher) {
+	defer wg.Done()
+	for {
+		select {
+		case <-ctx.Done():
+			logger.Info("Generation stopped due to cancellation", "Context", ctx)
+			return // Stop when context is canceled
+		case <-ticker.C:
+			// Send periodic update
+			if updateChan != nil {
+				updateChan <- StatsUpdate{
+					Stats: Stats{
+						Attempts: atomic.LoadUint64(&totalAttempts),
+						Found:    atomic.LoadUint64(&totalFound),
+					},
+				}
+			}
+		default:
+			atomic.AddUint64(&totalAttempts, 1)
+			isFinished := generateAndCheck(matcher, cfg, updateChan, &totalFound, &totalAttempts)
+			if isFinished {
+				return
+			}
+		}
+	}
+}
+
+func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64) (isFinished bool) {
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
@@ -100,7 +105,9 @@ func generateAndCheck(m *matcher.Matcher, cfg config.Config, updateChan chan<- S
 		if cfg.NumAddresses > 0 && count >= uint64(cfg.NumAddresses) {
 			logger.Info("Desired count reached - stopping generation")
 			// Let the normal shutdown process handle exit
+			isFinished = true
 			return
 		}
 	}
+	return
 }
