@@ -41,6 +41,7 @@ func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate
 			for {
 				select {
 				case <-ctx.Done():
+					logger.Info("Generation stopped due to cancellation", "Context", ctx)
 					return // Stop when context is canceled
 				case <-ticker.C:
 					// Send periodic update
