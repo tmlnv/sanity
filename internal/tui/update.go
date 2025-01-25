@@ -57,7 +57,7 @@ func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 		if m.cancel != nil {
 			m.cancel() // Properly cancel context
 		}
-		return nil
+		return tea.Quit
 	}
 
 	return m.listenForUpdates()

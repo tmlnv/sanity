@@ -7,7 +7,7 @@ import (
 	"runtime"
 
 	"github.com/tmlnv/sanity/internal/config"
-	"github.com/tmlnv/sanity/internal/context"
+	"github.com/tmlnv/sanity/internal/ctx"
 	"github.com/tmlnv/sanity/internal/generator"
 	"github.com/tmlnv/sanity/internal/logger"
 	"github.com/tmlnv/sanity/internal/tui"
@@ -59,7 +59,7 @@ func parseFlags() config.Config {
 
 func runCLI(cfg config.Config) {
 	logger.Init(cfg.LogFile)
-	ctx, cancel := context.CreateContext(cfg)
+	ctx, cancel := ctx.CreateContext(cfg)
 	defer cancel()
 
 	logger.Info("Starting vanity generation",

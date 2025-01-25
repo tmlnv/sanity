@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"runtime"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/tmlnv/sanity/internal/config"
-	"github.com/tmlnv/sanity/internal/context"
+	"github.com/tmlnv/sanity/internal/ctx"
 	"github.com/tmlnv/sanity/internal/generator"
 	"github.com/tmlnv/sanity/internal/logger"
 )
@@ -33,7 +34,7 @@ type Model struct {
 	lastResults []string
 	err         error
 	updateChan  chan generator.StatsUpdate
-	cancel      func()
+	cancel      context.CancelFunc
 }
 
 func InitialModel() Model {
@@ -78,7 +79,7 @@ func InitialModel() Model {
 func (m *Model) startGeneration() {
 	m.state = isGenerating
 	logger.Init(m.config.LogFile)
-	ctx, cancel := context.CreateContext(m.config)
+	ctx, cancel := ctx.CreateContext(m.config)
 
 	// Store cancel function in model to call later
 	m.cancel = cancel
