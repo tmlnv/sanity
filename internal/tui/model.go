@@ -1,7 +1,6 @@
 package tui
 
 import (
-	"context"
 	"fmt"
 	"runtime"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/tmlnv/sanity/internal/config"
+	"github.com/tmlnv/sanity/internal/context"
 	"github.com/tmlnv/sanity/internal/generator"
 	"github.com/tmlnv/sanity/internal/logger"
 )
@@ -68,10 +68,7 @@ func InitialModel() Model {
 
 func (m *Model) startGeneration() {
 	logger.Init(m.config.LogFile)
-	ctx, cancel := context.WithCancel(context.Background())
-	if m.config.Timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, m.config.Timeout)
-	}
+	ctx, cancel := context.CreateContext(m.config)
 	defer cancel()
 
 	generator.Start(ctx, cancel, m.config, m.updateChan, true)

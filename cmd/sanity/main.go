@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -9,6 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/tmlnv/sanity/internal/config"
+	"github.com/tmlnv/sanity/internal/context"
 	"github.com/tmlnv/sanity/internal/generator"
 	"github.com/tmlnv/sanity/internal/logger"
 	"github.com/tmlnv/sanity/internal/tui"
@@ -40,7 +40,7 @@ func parseFlags() config.Config {
 	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
 	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
 	flag.DurationVar(&cfg.Timeout, "timeout", 0, "Maximum search duration")
-	flag.StringVar(&cfg.LogFile, "logfile", "", "Path to log file")
+	flag.StringVar(&cfg.LogFile, "logfile", "sanity.log", "Path to log file")
 	showVersion := flag.Bool("version", false, "Show version")
 
 	flag.Parse()
@@ -60,7 +60,7 @@ func parseFlags() config.Config {
 
 func runCLI(cfg config.Config) {
 	logger.Init(cfg.LogFile)
-	ctx, cancel := createContext(cfg)
+	ctx, cancel := context.CreateContext(cfg)
 	defer cancel()
 
 	logger.Info("Starting vanity generation",
@@ -72,11 +72,4 @@ func runCLI(cfg config.Config) {
 	)
 
 	generator.Start(ctx, cancel, cfg, nil, false)
-}
-
-func createContext(cfg config.Config) (context.Context, context.CancelFunc) {
-	if cfg.Timeout > 0 {
-		return context.WithTimeout(context.Background(), cfg.Timeout)
-	}
-	return context.WithCancel(context.Background())
 }
