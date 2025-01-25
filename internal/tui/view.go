@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/tmlnv/sanity/internal/config"
 )
 
 var (
@@ -92,14 +93,14 @@ func (m Model) finishedView() string {
 	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
 	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
 
-	if len(m.lastGenerated) > 0 {
-		b.WriteString("\nLast found addresses:\n")
-		for _, res := range m.lastGenerated {
-			b.WriteString(fmt.Sprintf("• %s\n", res))
+	if len(m.matched) > 0 {
+		b.WriteString("\nFound addresses:\n")
+		for _, addr := range m.matched {
+			b.WriteString(fmt.Sprintf("• %s\n", addr))
 		}
 	}
 
-	// b.WriteString(helpStyle.Render("\nPress Ctrl+C to exit"))
+	b.WriteString(fmt.Sprintf("\nCorresponding private keys were written to %v:\n", config.PrivateKeysFile))
 
 	return lipgloss.NewStyle().
 		Padding(1, 2).

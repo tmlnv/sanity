@@ -10,6 +10,7 @@ import (
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/logger"
 	"github.com/tmlnv/sanity/internal/matcher"
+	"github.com/tmlnv/sanity/internal/saver"
 )
 
 type Stats struct {
@@ -114,6 +115,8 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 		count = atomic.AddUint64(totalFound, 1)
 		stats.Stats.Found = count
 		stats.LastMatch = address
+
+		saver.SaveKeyPair(address, wallet.PrivateKey.String())
 
 		if !isTui {
 			logger.Info("Vanity address found",

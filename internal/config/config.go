@@ -4,12 +4,13 @@ package config
 import "time"
 
 type Config struct {
-	Prefix        string
-	Suffix        string
-	Regex         string
-	NumAddresses  int
-	Concurrency   int
-	Timeout       time.Duration
-	LogFile       string
-	FlagsProvided bool
+	Prefix          string
+	Suffix          string
+	Regex           string
+	NumAddresses    int
+	Concurrency     int
+	Timeout         time.Duration
+	LogFile         string
+	PrivateKeysFile string
+	FlagsProvided   bool
 }

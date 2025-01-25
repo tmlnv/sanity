@@ -13,7 +13,6 @@ import (
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/ctx"
 	"github.com/tmlnv/sanity/internal/generator"
-	"github.com/tmlnv/sanity/internal/logger"
 )
 
 const (
@@ -43,6 +42,8 @@ func InitialModel() Model {
 		config: config.Config{
 			NumAddresses: 1,
 			Concurrency:  runtime.NumCPU(),
+			// LogFile:         config.LogFile,
+			// PrivateKeysFile: config.PrivateKeysFile,
 		},
 		inputs: make([]textinput.Model, 4),
 		spinner: spinner.New(
@@ -79,7 +80,7 @@ func InitialModel() Model {
 
 func (m *Model) startGeneration() {
 	m.state = isGenerating
-	logger.Init(m.config.LogFile)
+
 	ctx, cancel := ctx.CreateContext(m.config)
 
 	// Store cancel function in model to call later

@@ -1,3 +1,4 @@
+// logger/logger.go
 package logger
 
 import (
@@ -12,6 +13,7 @@ import (
 
 var (
 	instance *log.Logger
+	file     *os.File // Store the file handle
 	mu       sync.Mutex
 )
 
@@ -22,7 +24,8 @@ func Init(logFile string) {
 
 	writers := []io.Writer{os.Stdout}
 	if logFile != "" {
-		file, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		var err error
+		file, err = os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
 			log.Fatalf("Could not open log file: %v", err)
 		}
@@ -30,6 +33,19 @@ func Init(logFile string) {
 	}
 
 	instance = log.New(io.MultiWriter(writers...), "[sanity] ", log.LstdFlags|log.Lmsgprefix)
+}
+
+// Close properly closes the log file if it was opened.
+func Close() error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	if file != nil {
+		err := file.Close()
+		file = nil // Clear the file handle
+		return err
+	}
+	return nil
 }
 
 // getGoroutineID returns the current goroutine ID.
