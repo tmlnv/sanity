@@ -63,17 +63,23 @@ func (m Model) generationView() string {
 	var b strings.Builder
 	// Use spinner.View() directly without newline to preserve animation
 	b.WriteString(fmt.Sprintf("%s Generating addresses...\n\n", m.spinner.View()))
-	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
-	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
 
-	if len(m.lastResults) > 0 {
-		b.WriteString("\nLast found addresses:\n")
-		for _, res := range m.lastResults {
-			b.WriteString(fmt.Sprintf("• %s\n", res))
+	if len(m.lastGenerated) > 0 {
+		for _, addr := range m.lastGenerated {
+			b.WriteString(fmt.Sprintf("• %s\n", addr))
 		}
 	}
 
-	b.WriteString(helpStyle.Render("\nPress Ctrl+C to exit"))
+	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
+	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
+	if len(m.matched) > 0 {
+		b.WriteString("\nFound addresses:\n")
+		for _, addr := range m.matched {
+			b.WriteString(fmt.Sprintf("• %s\n", addr))
+		}
+	}
+
+	b.WriteString(helpStyle.Render("\nPress Esc or Ctrl+C to exit"))
 
 	return lipgloss.NewStyle().
 		Padding(1, 2).
@@ -86,9 +92,9 @@ func (m Model) finishedView() string {
 	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
 	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
 
-	if len(m.lastResults) > 0 {
+	if len(m.lastGenerated) > 0 {
 		b.WriteString("\nLast found addresses:\n")
-		for _, res := range m.lastResults {
+		for _, res := range m.lastGenerated {
 			b.WriteString(fmt.Sprintf("• %s\n", res))
 		}
 	}

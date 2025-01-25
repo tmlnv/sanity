@@ -46,12 +46,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 // Add this helper method to handle final updates
 func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 	m.stats = update.Stats
-	if update.LastResult != "" {
-		m.lastResults = append(m.lastResults, update.LastResult)
-		if len(m.lastResults) > 5 {
-			m.lastResults = m.lastResults[1:]
+	if update.LastGenerated != "" {
+		m.lastGenerated = append(m.lastGenerated, update.LastGenerated)
+		if len(m.lastGenerated) > 5 {
+			m.lastGenerated = m.lastGenerated[1:]
 		}
 	}
+
+	if update.LastMatch != "" {
+		m.matched = append(m.matched, update.LastMatch)
+	}
+
 	if update.IsFinished {
 		m.state = isFinished
 		if m.cancel != nil {

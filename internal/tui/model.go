@@ -25,16 +25,17 @@ const (
 type modelState int
 
 type Model struct {
-	inputs      []textinput.Model
-	step        int
-	spinner     spinner.Model
-	state       modelState
-	config      config.Config
-	stats       generator.Stats
-	lastResults []string
-	err         error
-	updateChan  chan generator.StatsUpdate
-	cancel      context.CancelFunc
+	inputs        []textinput.Model
+	step          int
+	spinner       spinner.Model
+	state         modelState
+	config        config.Config
+	stats         generator.Stats
+	lastGenerated []string
+	matched       []string
+	err           error
+	updateChan    chan generator.StatsUpdate
+	cancel        context.CancelFunc
 }
 
 func InitialModel() Model {

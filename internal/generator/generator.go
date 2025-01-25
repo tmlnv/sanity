@@ -18,9 +18,10 @@ type Stats struct {
 }
 
 type StatsUpdate struct {
-	Stats      Stats
-	LastResult string
-	IsFinished bool
+	Stats         Stats
+	LastGenerated string
+	LastMatch     string
+	IsFinished    bool
 }
 
 func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate, isTui bool) {
@@ -94,13 +95,25 @@ func worker(ctx context.Context, wg *sync.WaitGroup, cfg config.Config, ticker *
 }
 
 func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64, isTui bool) {
+	var stats StatsUpdate
+
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
 	count := atomic.LoadUint64(totalFound)
 	attempts := atomic.LoadUint64(totalAttempts)
+
+	stats.Stats = Stats{
+		Attempts: attempts,
+		Found:    count,
+	}
+	stats.LastGenerated = address
+
 	if m.Match(address) {
+
 		count = atomic.AddUint64(totalFound, 1)
+		stats.Stats.Found = count
+		stats.LastMatch = address
 
 		if !isTui {
 			logger.Info("Vanity address found",
@@ -113,12 +126,6 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 
 	if updateChan != nil {
 		// Send update before checking for exit condition
-		updateChan <- StatsUpdate{
-			Stats: Stats{
-				Attempts: attempts,
-				Found:    count,
-			},
-			LastResult: address,
-		}
+		updateChan <- stats
 	}
 }
