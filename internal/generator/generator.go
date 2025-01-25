@@ -40,10 +40,12 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 	}
 
 	wg.Wait()
-	logger.Info("Generation completed",
-		"attempts", atomic.LoadUint64(&totalAttempts),
-		"found", totalFound,
-	)
+	if !isTui {
+		logger.Info("Generation completed",
+			"attempts", atomic.LoadUint64(&totalAttempts),
+			"found", totalFound,
+		)
+	}
 
 	if updateChan != nil {
 		close(updateChan) // Close the channel to signal completion
