@@ -36,7 +36,7 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
-		go worker(ctx, calcel, &wg, cfg, ticker, updateChan, totalAttempts, totalFound, matcher, isTui)
+		go worker(ctx, calcel, &wg, cfg, ticker, updateChan, &totalAttempts, &totalFound, matcher, isTui)
 	}
 
 	wg.Wait()
@@ -50,7 +50,7 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 	}
 }
 
-func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts uint64, totalFound uint64, matcher *matcher.Matcher, isTui bool) {
+func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts *uint64, totalFound *uint64, matcher *matcher.Matcher, isTui bool) {
 	defer wg.Done()
 	for {
 		select {
@@ -64,15 +64,15 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 			if updateChan != nil {
 				updateChan <- StatsUpdate{
 					Stats: Stats{
-						Attempts: atomic.LoadUint64(&totalAttempts),
-						Found:    atomic.LoadUint64(&totalFound),
+						Attempts: atomic.LoadUint64(totalAttempts),
+						Found:    atomic.LoadUint64(totalFound),
 					},
 				}
 			}
 		default:
-			atomic.AddUint64(&totalAttempts, 1)
-			generateAndCheck(matcher, updateChan, &totalFound, &totalAttempts, isTui)
-			if cfg.NumAddresses > 0 && totalFound >= uint64(cfg.NumAddresses) {
+			atomic.AddUint64(totalAttempts, 1)
+			generateAndCheck(matcher, updateChan, totalFound, totalAttempts, isTui)
+			if cfg.NumAddresses > 0 && atomic.LoadUint64(totalFound) >= uint64(cfg.NumAddresses) {
 				if !isTui {
 					logger.Debug("Desired count reached - stopping generation")
 				}
@@ -83,7 +83,7 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 	}
 }
 
-func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64, isTui bool) (isFinished bool) {
+func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64, isTui bool) {
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
