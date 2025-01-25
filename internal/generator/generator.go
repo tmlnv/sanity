@@ -23,7 +23,7 @@ type StatsUpdate struct {
 	IsFinished bool
 }
 
-func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, updateChan chan<- StatsUpdate, isTui bool) {
+func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate, isTui bool) {
 	var (
 		wg            sync.WaitGroup
 		matcher       = matcher.NewMatcher(cfg)
@@ -37,7 +37,7 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 
 	for i := 0; i < cfg.Concurrency; i++ {
 		wg.Add(1)
-		go worker(ctx, calcel, &wg, cfg, ticker, updateChan, &totalAttempts, &totalFound, matcher, isTui)
+		go worker(ctx, &wg, cfg, ticker, updateChan, &totalAttempts, &totalFound, matcher, isTui)
 	}
 
 	wg.Wait()
@@ -49,27 +49,25 @@ func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, up
 	}
 
 	if updateChan != nil {
-		close(updateChan) // Close the channel to signal completion
+		updateChan <- StatsUpdate{
+			Stats: Stats{
+				Attempts: atomic.LoadUint64(&totalAttempts),
+				Found:    atomic.LoadUint64(&totalFound),
+			},
+			IsFinished: true,
+		}
+		close(updateChan)
 	}
 }
 
-func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts *uint64, totalFound *uint64, matcher *matcher.Matcher, isTui bool) {
+// In the worker function, remove sending IsFinished on cancellation
+func worker(ctx context.Context, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts *uint64, totalFound *uint64, matcher *matcher.Matcher, isTui bool) {
 	defer wg.Done()
 	for {
 		select {
 		case <-ctx.Done():
 			if !isTui {
 				logger.Debug("Generation stopped due to cancellation", "Context", ctx)
-			}
-			if updateChan != nil {
-				logger.Debug("Generation stopped due to cancellation", "Context", ctx)
-				updateChan <- StatsUpdate{
-					Stats: Stats{
-						Attempts: atomic.LoadUint64(totalAttempts),
-						Found:    atomic.LoadUint64(totalFound),
-					},
-					IsFinished: true,
-				}
 			}
 			return // Stop when context is canceled
 		case <-ticker.C:
@@ -89,17 +87,6 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 				if !isTui {
 					logger.Debug("Desired count reached - stopping generation")
 				}
-				if updateChan != nil {
-					logger.Debug("Generation stopped due to cancellation", "Context", ctx)
-					updateChan <- StatsUpdate{
-						Stats: Stats{
-							Attempts: atomic.LoadUint64(totalAttempts),
-							Found:    atomic.LoadUint64(totalFound),
-						},
-						IsFinished: true,
-					}
-				}
-				cancel() // Stop all workers
 				return
 			}
 		}

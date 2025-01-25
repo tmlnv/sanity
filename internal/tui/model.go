@@ -33,6 +33,7 @@ type Model struct {
 	lastResults []string
 	err         error
 	updateChan  chan generator.StatsUpdate
+	cancel      func()
 }
 
 func InitialModel() Model {
@@ -78,10 +79,11 @@ func (m *Model) startGeneration() {
 	m.state = isGenerating
 	logger.Init(m.config.LogFile)
 	ctx, cancel := context.CreateContext(m.config)
-	defer cancel()
-	defer func() { m.state = isFinished }()
 
-	generator.Start(ctx, cancel, m.config, m.updateChan, true)
+	// Store cancel function in model to call later
+	m.cancel = cancel
+
+	go generator.Start(ctx, m.config, m.updateChan, true)
 }
 
 func validateNumber(s string) error {

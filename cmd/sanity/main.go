@@ -70,5 +70,5 @@ func runCLI(cfg config.Config) {
 		"timeout", cfg.Timeout,
 	)
 
-	generator.Start(ctx, cancel, cfg, nil, false)
+	generator.Start(ctx, cfg, nil, false)
 }

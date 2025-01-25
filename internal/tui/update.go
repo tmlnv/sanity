@@ -52,11 +52,12 @@ func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 			m.lastResults = m.lastResults[1:]
 		}
 	}
-
-	// Check if we've reached the target count
-	if m.config.NumAddresses > 0 &&
-		uint64(m.config.NumAddresses) <= m.stats.Found {
-		return tea.Quit
+	if update.IsFinished {
+		m.state = isFinished
+		if m.cancel != nil {
+			m.cancel() // Properly cancel context
+		}
+		return nil
 	}
 
 	return m.listenForUpdates()
@@ -182,7 +183,7 @@ func (m *Model) updateFocusedInput(msg tea.Msg) (*Model, tea.Cmd) {
 func (m Model) listenForUpdates() tea.Cmd {
 	return func() tea.Msg {
 		update, ok := <-m.updateChan
-		if !ok || update.IsFinished {
+		if !ok {
 			return tea.Quit
 		}
 		return update

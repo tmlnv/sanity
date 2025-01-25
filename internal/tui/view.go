@@ -82,6 +82,7 @@ func (m Model) generationView() string {
 
 func (m Model) finishedView() string {
 	var b strings.Builder
+	b.WriteString("Finished\n\n")
 	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
 	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
 
