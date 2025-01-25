@@ -24,7 +24,13 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.isGenerating {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
+			return m, tea.Quit
+		}
+	}
+	if m.state == isGenerating {
 		return m.updateGeneration(msg)
 	}
 	return m.updateInputs(msg)
@@ -79,7 +85,7 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step++
 			case submitStep:
 				m.parseInputs()
-				m.isGenerating = true
+				m.state = isGenerating
 				go m.startGeneration()
 				return m, tea.Batch(
 					m.spinner.Tick,

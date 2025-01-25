@@ -17,18 +17,24 @@ var (
 			Background(lipgloss.Color("#7D56F4")).
 			Padding(0, 1)
 	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
+	mainStyle  = lipgloss.NewStyle().Padding(1, 2)
 )
 
 func (m Model) View() string {
+	var s string
 	if m.err != nil {
-		return errorStyle.Render(fmt.Sprintf("Error: %v", m.err))
+		s = errorStyle.Render(fmt.Sprintf("Error: %v", m.err))
 	}
-	if m.isGenerating {
-		return m.generationView()
-	} else if m.isFinished {
-		return m.finishedView()
+
+	switch m.state {
+	case isConfig:
+		s = m.configView()
+	case isGenerating:
+		s = m.generationView()
+	case isFinished:
+		s = m.finishedView()
 	}
-	return m.configView()
+	return s
 }
 
 func (m Model) configView() string {
