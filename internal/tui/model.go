@@ -75,6 +75,7 @@ func InitialModel() Model {
 }
 
 func (m *Model) startGeneration() {
+	m.state = isGenerating
 	logger.Init(m.config.LogFile)
 	ctx, cancel := context.CreateContext(m.config)
 	defer cancel()

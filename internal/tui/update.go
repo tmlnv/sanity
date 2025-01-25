@@ -85,7 +85,6 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step++
 			case submitStep:
 				m.parseInputs()
-				m.state = isGenerating
 				go m.startGeneration()
 				return m, tea.Batch(
 					m.spinner.Tick,
