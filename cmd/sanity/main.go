@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/context"
 	"github.com/tmlnv/sanity/internal/generator"
@@ -20,7 +19,7 @@ func main() {
 	cfg := parseFlags()
 
 	if !cfg.FlagsProvided {
-		p := tea.NewProgram(tui.InitialModel())
+		p := tui.NewProgram(tui.InitialModel())
 		if _, err := p.Run(); err != nil {
 			logger.Error("Error running TUI", "error", err)
 			os.Exit(1)
