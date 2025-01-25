@@ -11,7 +11,13 @@ import (
 	"github.com/tmlnv/sanity/internal/generator"
 )
 
-const submitStep = 4
+const (
+	prefixStep = iota
+	numbAddressesStep
+	numThreadsStep
+	timeoutStep
+	submitStep
+)
 
 func (m Model) Init() tea.Cmd {
 	return textinput.Blink
@@ -68,7 +74,10 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case tea.KeyEnter:
-			if m.step == submitStep {
+			switch m.step {
+			case timeoutStep:
+				m.step++
+			case submitStep:
 				m.parseInputs()
 				m.generating = true
 				go m.startGeneration()
@@ -77,7 +86,7 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.listenForUpdates(),
 				)
 			}
-			return m.handleInput(msg)
+			return m.handleInput()
 
 		case tea.KeyTab, tea.KeyShiftTab, tea.KeyUp, tea.KeyDown:
 			return m.handleNavigation(msg)
@@ -107,7 +116,7 @@ func (m *Model) parseInputs() {
 	}
 }
 
-func (m *Model) handleInput(msg tea.KeyMsg) (*Model, tea.Cmd) {
+func (m *Model) handleInput() (*Model, tea.Cmd) {
 	if m.step < len(m.inputs)-1 {
 		m.step++
 		m.inputs[m.step].Focus()
