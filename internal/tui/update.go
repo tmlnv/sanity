@@ -24,7 +24,7 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	if m.generating {
+	if m.isGenerating {
 		return m.updateGeneration(msg)
 	}
 	return m.updateInputs(msg)
@@ -79,7 +79,7 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.step++
 			case submitStep:
 				m.parseInputs()
-				m.generating = true
+				m.isGenerating = true
 				go m.startGeneration()
 				return m, tea.Batch(
 					m.spinner.Tick,
@@ -169,7 +169,7 @@ func (m *Model) updateFocusedInput(msg tea.Msg) (*Model, tea.Cmd) {
 func (m Model) listenForUpdates() tea.Cmd {
 	return func() tea.Msg {
 		update, ok := <-m.updateChan
-		if !ok {
+		if !ok || update.IsFinished {
 			return tea.Quit
 		}
 		return update

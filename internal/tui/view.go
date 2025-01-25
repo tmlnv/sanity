@@ -23,8 +23,10 @@ func (m Model) View() string {
 	if m.err != nil {
 		return errorStyle.Render(fmt.Sprintf("Error: %v", m.err))
 	}
-	if m.generating {
+	if m.isGenerating {
 		return m.generationView()
+	} else if m.isFinished {
+		return m.finishedView()
 	}
 	return m.configView()
 }
@@ -66,6 +68,25 @@ func (m Model) generationView() string {
 	}
 
 	b.WriteString(helpStyle.Render("\nPress Ctrl+C to exit"))
+
+	return lipgloss.NewStyle().
+		Padding(1, 2).
+		Render(b.String())
+}
+
+func (m Model) finishedView() string {
+	var b strings.Builder
+	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
+	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
+
+	if len(m.lastResults) > 0 {
+		b.WriteString("\nLast found addresses:\n")
+		for _, res := range m.lastResults {
+			b.WriteString(fmt.Sprintf("• %s\n", res))
+		}
+	}
+
+	// b.WriteString(helpStyle.Render("\nPress Ctrl+C to exit"))
 
 	return lipgloss.NewStyle().
 		Padding(1, 2).

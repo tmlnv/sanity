@@ -20,6 +20,7 @@ type Stats struct {
 type StatsUpdate struct {
 	Stats      Stats
 	LastResult string
+	IsFinished bool
 }
 
 func Start(ctx context.Context, calcel context.CancelFunc, cfg config.Config, updateChan chan<- StatsUpdate, isTui bool) {
@@ -60,6 +61,16 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 			if !isTui {
 				logger.Debug("Generation stopped due to cancellation", "Context", ctx)
 			}
+			if updateChan != nil {
+				logger.Debug("Generation stopped due to cancellation", "Context", ctx)
+				updateChan <- StatsUpdate{
+					Stats: Stats{
+						Attempts: atomic.LoadUint64(totalAttempts),
+						Found:    atomic.LoadUint64(totalFound),
+					},
+					IsFinished: true,
+				}
+			}
 			return // Stop when context is canceled
 		case <-ticker.C:
 			// Send periodic update
@@ -78,6 +89,16 @@ func worker(ctx context.Context, cancel context.CancelFunc, wg *sync.WaitGroup, 
 				if !isTui {
 					logger.Debug("Desired count reached - stopping generation")
 				}
+				if updateChan != nil {
+					logger.Debug("Generation stopped due to cancellation", "Context", ctx)
+					updateChan <- StatsUpdate{
+						Stats: Stats{
+							Attempts: atomic.LoadUint64(totalAttempts),
+							Found:    atomic.LoadUint64(totalFound),
+						},
+						IsFinished: true,
+					}
+				}
 				cancel() // Stop all workers
 				return
 			}
@@ -89,9 +110,10 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
+	count := atomic.LoadUint64(totalFound)
+	attempts := atomic.LoadUint64(totalAttempts)
 	if m.Match(address) {
-		count := atomic.AddUint64(totalFound, 1)
-		attempts := atomic.LoadUint64(totalAttempts)
+		count = atomic.AddUint64(totalFound, 1)
 
 		if !isTui {
 			logger.Info("Vanity address found",
@@ -100,16 +122,16 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 				"attempts", attempts,
 			)
 		}
-		if updateChan != nil {
-			// Send update before checking for exit condition
-			updateChan <- StatsUpdate{
-				Stats: Stats{
-					Attempts: attempts,
-					Found:    count,
-				},
-				LastResult: address,
-			}
+	}
+
+	if updateChan != nil {
+		// Send update before checking for exit condition
+		updateChan <- StatsUpdate{
+			Stats: Stats{
+				Attempts: attempts,
+				Found:    count,
+			},
+			LastResult: address,
 		}
 	}
-	return
 }

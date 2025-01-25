@@ -16,15 +16,16 @@ import (
 )
 
 type Model struct {
-	inputs      []textinput.Model
-	step        int
-	spinner     spinner.Model
-	generating  bool
-	config      config.Config
-	stats       generator.Stats
-	lastResults []string
-	err         error
-	updateChan  chan generator.StatsUpdate
+	inputs       []textinput.Model
+	step         int
+	spinner      spinner.Model
+	isGenerating bool
+	isFinished   bool
+	config       config.Config
+	stats        generator.Stats
+	lastResults  []string
+	err          error
+	updateChan   chan generator.StatsUpdate
 }
 
 func InitialModel() Model {
@@ -70,6 +71,7 @@ func (m *Model) startGeneration() {
 	logger.Init(m.config.LogFile)
 	ctx, cancel := context.CreateContext(m.config)
 	defer cancel()
+	defer func() { m.isFinished = true }()
 
 	generator.Start(ctx, cancel, m.config, m.updateChan, true)
 }
