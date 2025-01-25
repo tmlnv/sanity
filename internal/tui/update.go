@@ -26,14 +26,21 @@ func (m Model) Init() tea.Cmd {
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC || msg.Type == tea.KeyEsc {
+		switch msg.Type {
+		case tea.KeyCtrlC, tea.KeyEsc:
 			return m, tea.Quit
 		}
 	}
-	if m.state == isGenerating {
-		return m.updateGeneration(msg)
+	var r func(tea.Msg) (tea.Model, tea.Cmd)
+	switch m.state {
+	case isConfig:
+		r = m.updateInputs
+	case isGenerating:
+		r = m.updateGeneration
+	case isFinished:
+		r = m.updateFinished
 	}
-	return m.updateInputs(msg)
+	return r(msg)
 }
 
 // Add this helper method to handle final updates
@@ -58,10 +65,6 @@ func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 // Update the updateGeneration case
 func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		if msg.Type == tea.KeyCtrlC {
-			return m, tea.Quit
-		}
 	case generator.StatsUpdate:
 		return m, m.handleStatsUpdate(msg)
 	case spinner.TickMsg:
@@ -72,13 +75,18 @@ func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) updateFinished(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case generator.StatsUpdate:
+		return m, m.handleStatsUpdate(msg)
+	}
+	return m, nil
+}
+
 func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.Type {
-		case tea.KeyCtrlC, tea.KeyEsc:
-			return m, tea.Quit
-
 		case tea.KeyEnter:
 			switch m.step {
 			case timeoutStep:
