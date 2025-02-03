@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -55,6 +56,12 @@ func (m Model) configView() string {
 		button = focusedStyle.Render("[ Submit ]")
 	}
 	b.WriteString("\n\n" + button + "\n")
+
+	b.WriteString("\n")
+	if m.err != nil {
+		b.WriteString(helpStyle.Render("Error: ") + errorStyle.Render(m.err.Error()) + "\n")
+	}
+
 	b.WriteString(helpStyle.Render("(esc to quit | tab to navigate)"))
 
 	return lipgloss.NewStyle().Padding(1, 2).Render(b.String())
@@ -63,15 +70,16 @@ func (m Model) configView() string {
 func (m Model) generationView() string {
 	var b strings.Builder
 	// Use spinner.View() directly without newline to preserve animation
-	b.WriteString(fmt.Sprintf("%s Generating addresses...\n\n", m.spinner.View()))
+	b.WriteString(mainStyle.Render("%Generating addresses...\n\n", m.spinner.View()))
+	b.WriteString(mainStyle.Render(m.config.String()) + "\n")
 
 	if len(m.lastGenerated) > 0 {
 		for _, addr := range m.lastGenerated {
-			b.WriteString(fmt.Sprintf("• %s\n", addr))
+			b.WriteString(mainStyle.Render("• " + addr))
 		}
 	}
 
-	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
+	b.WriteString(mainStyle.Render("Attempts: " + strconv.Itoa(int(m.stats.Attempts)) + "\n"))
 	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
 	if len(m.matched) > 0 {
 		b.WriteString("\nFound addresses:\n")

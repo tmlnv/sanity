@@ -94,9 +94,9 @@ func (m Model) updateFinished(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		m.err = nil
 
 		switch msg.Type {
-
 		case tea.KeyEnter:
 			switch m.step {
 			case timeoutStep:
@@ -141,7 +141,7 @@ func (m *Model) handleDurationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	// Block invalid characters
-	m.err = fmt.Errorf("only numbers and s/m/h units allowed")
+	m.err = fmt.Errorf("only numbers and s/m/h units are allowed in duration")
 	return m, nil
 }
 
