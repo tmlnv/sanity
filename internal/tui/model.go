@@ -99,8 +99,20 @@ func validateNumber(s string) error {
 
 func validateDuration(s string) error {
 	if s == "" {
+		return nil // Allow empty input during typing
+	}
+
+	// Special case: allow standalone zero
+	if s == "0" {
 		return nil
 	}
+
+	// Allow pure numeric input (temporary during typing)
+	if _, err := strconv.Atoi(s); err == nil {
+		return nil
+	}
+
+	// Validate proper duration format
 	_, err := time.ParseDuration(s)
 	if err != nil {
 		return fmt.Errorf("invalid duration format (e.g., 30s, 5m)")

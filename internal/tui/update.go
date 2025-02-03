@@ -1,8 +1,10 @@
 package tui
 
 import (
+	"fmt"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
@@ -92,7 +94,9 @@ func (m Model) updateFinished(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+
 		switch msg.Type {
+
 		case tea.KeyEnter:
 			switch m.step {
 			case timeoutStep:
@@ -107,12 +111,38 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m.handleInput()
 
+		case tea.KeyRunes:
+			switch m.step {
+			case timeoutStep:
+				return m.handleDurationInput(msg)
+			}
+
 		case tea.KeyTab, tea.KeyShiftTab, tea.KeyUp, tea.KeyDown:
 			return m.handleNavigation(msg)
 		}
 	}
 
 	return m.updateFocusedInput(msg)
+}
+
+func (m *Model) handleDurationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	current := m.inputs[timeoutStep].Value()
+
+	// Allow numeric input at any position
+	if _, err := strconv.Atoi(string(msg.Runes)); err == nil {
+		return m.updateFocusedInput(msg)
+	}
+
+	// Allow unit characters only at end
+	if strings.ContainsAny(string(msg.Runes), "smh") {
+		if len(current) == 0 || strings.ContainsAny(current[len(current)-1:], "0123456789") {
+			return m.updateFocusedInput(msg)
+		}
+	}
+
+	// Block invalid characters
+	m.err = fmt.Errorf("only numbers and s/m/h units allowed")
+	return m, nil
 }
 
 func (m *Model) parseInputs() {
@@ -131,7 +161,12 @@ func (m *Model) parseInputs() {
 	}
 
 	if val := m.inputs[3].Value(); val != "" {
-		m.config.Timeout, _ = time.ParseDuration(val)
+		// Handle pure numeric input as seconds
+		if dur, err := strconv.Atoi(val); err == nil {
+			m.config.Timeout = time.Duration(dur) * time.Second
+		} else {
+			m.config.Timeout, _ = time.ParseDuration(val)
+		}
 	}
 }
 
