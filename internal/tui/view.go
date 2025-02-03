@@ -19,7 +19,7 @@ var (
 			Background(lipgloss.Color("#7D56F4")).
 			Padding(0, 1)
 	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF0000"))
-	mainStyle  = lipgloss.NewStyle().Padding(1, 2)
+	mainStyle  = lipgloss.NewStyle()
 )
 
 func (m Model) View() string {
@@ -69,22 +69,23 @@ func (m Model) configView() string {
 
 func (m Model) generationView() string {
 	var b strings.Builder
-	// Use spinner.View() directly without newline to preserve animation
-	b.WriteString(mainStyle.Render("%Generating addresses...\n\n", m.spinner.View()))
+	// Using spinner.View() directly without newline to preserve animation
+	b.WriteString(mainStyle.Render(m.spinner.View() + "Generating addresses...\n\n"))
 	b.WriteString(mainStyle.Render(m.config.String()) + "\n")
 
 	if len(m.lastGenerated) > 0 {
 		for _, addr := range m.lastGenerated {
-			b.WriteString(mainStyle.Render("• " + addr))
+			b.WriteString(mainStyle.Render(fmt.Sprintf("• %s\n", addr)))
 		}
 	}
+	b.WriteString("\n")
 
 	b.WriteString(mainStyle.Render("Attempts: " + strconv.Itoa(int(m.stats.Attempts)) + "\n"))
-	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
+	b.WriteString(mainStyle.Render(fmt.Sprintf("Found: %d\n", m.stats.Found)))
 	if len(m.matched) > 0 {
 		b.WriteString("\nFound addresses:\n")
 		for _, addr := range m.matched {
-			b.WriteString(fmt.Sprintf("• %s\n", addr))
+			b.WriteString(mainStyle.Render(fmt.Sprintf("• %s\n", addr)))
 		}
 	}
 

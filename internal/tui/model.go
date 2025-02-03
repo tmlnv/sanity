@@ -40,10 +40,10 @@ type Model struct {
 func InitialModel() Model {
 	m := Model{
 		config: config.Config{
-			NumAddresses: 1,
-			Concurrency:  runtime.NumCPU(),
-			// LogFile:         config.LogFile,
-			// PrivateKeysFile: config.PrivateKeysFile,
+			NumAddresses:    1,
+			Concurrency:     runtime.NumCPU(),
+			LogFile:         config.LogFile,
+			PrivateKeysFile: config.PrivateKeysFile,
 		},
 		inputs: make([]textinput.Model, 4),
 		spinner: spinner.New(
