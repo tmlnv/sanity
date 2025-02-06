@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Prefix          string
 	Suffix          string
-	Regex           string
+	Regexp          string
 	NumAddresses    int
 	Concurrency     int
 	Timeout         time.Duration
@@ -21,7 +21,7 @@ type Config struct {
 func (c Config) String() string {
 	return "Prefix: " + c.Prefix + "\n" +
 		"Suffix: " + c.Suffix + "\n" +
-		"Regex: " + c.Regex + "\n" +
+		"Regexp: " + c.Regexp + "\n" +
 		"NumAddresses: " + strconv.Itoa(c.NumAddresses) + "\n" +
 		"Concurrency: " + strconv.Itoa(c.Concurrency) + "\n" +
 		"Timeout: " + c.Timeout.String() + "\n" +

@@ -12,9 +12,9 @@ const base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 // SolanaAddressLength is the length of a Solana public key in base58 format
 const SolanaAddressLength = 44
 
-// ValidateSolana checks if the provided prefix, suffix, and regex pattern could potentially
+// ValidateSolana checks if the provided prefix, suffix, and regexp pattern could potentially
 // match a valid Solana address
-func ValidateSolana(prefix, suffix, regexPattern string) error {
+func ValidateSolana(prefix, suffix, regexpPattern string) error {
 	// Check prefix
 	if err := validateBase58String(prefix); err != nil {
 		return fmt.Errorf("invalid prefix: %v", err)
@@ -31,10 +31,10 @@ func ValidateSolana(prefix, suffix, regexPattern string) error {
 			len(prefix)+len(suffix), SolanaAddressLength)
 	}
 
-	// Validate regex if provided
-	if regexPattern != "" {
-		if err := validateRegexPattern(regexPattern); err != nil {
-			return fmt.Errorf("invalid regex pattern: %v", err)
+	// Validate regexp if provided
+	if regexpPattern != "" {
+		if err := validateRegexpPattern(regexpPattern); err != nil {
+			return fmt.Errorf("invalid regexp pattern: %v", err)
 		}
 	}
 
@@ -56,10 +56,10 @@ func validateBase58String(s string) error {
 	return nil
 }
 
-// validateRegexPattern checks if a regex pattern is valid and could potentially match
+// validateRegexpPattern checks if a regexp pattern is valid and could potentially match
 // a Solana address
-func validateRegexPattern(pattern string) error {
-	// First check if it's a valid regex
+func validateRegexpPattern(pattern string) error {
+	// First check if it's a valid regexp
 	_, err := regexp.Compile(pattern)
 	if err != nil {
 		return fmt.Errorf("invalid regular expression: %v", err)

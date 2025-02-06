@@ -25,12 +25,12 @@ func ParseFlags() config.Config {
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
 		fmt.Fprintf(os.Stderr, "  Generate an address with prefix 'sol':\n    $ sanity -prefix sol\n\n")
 		fmt.Fprintf(os.Stderr, "  Generate 5 addresses with suffix 'eth':\n    $ sanity -suffix eth -count 5\n\n")
-		fmt.Fprintf(os.Stderr, "  Generate addresses matching regex with timeout:\n    $ sanity -regex '^sol.*eth$' -timeout 5m\n")
+		fmt.Fprintf(os.Stderr, "  Generate addresses matching regexp with timeout:\n    $ sanity -regex '^sol.*eth$' -timeout 5m\n")
 	}
 
 	flag.StringVar(&cfg.Prefix, "prefix", "", "Vanity prefix for Solana address")
 	flag.StringVar(&cfg.Suffix, "suffix", "", "Vanity suffix for Solana address")
-	flag.StringVar(&cfg.Regex, "regex", "", "Regex pattern to match")
+	flag.StringVar(&cfg.Regexp, "regexp", "", "Regex pattern to match")
 	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
 	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
 	flag.StringVar(&timeoutStr, "timeout", "0", "Maximum search duration (e.g., 30s, 5m, or number of seconds)")
@@ -64,7 +64,7 @@ func ParseFlags() config.Config {
 
 func RunCLI(cfg config.Config) {
 	// Validate Solana address pattern before starting
-	if err := validator.ValidateSolana(cfg.Prefix, cfg.Suffix, cfg.Regex); err != nil {
+	if err := validator.ValidateSolana(cfg.Prefix, cfg.Suffix, cfg.Regexp); err != nil {
 		logger.Error("Validation error", "error", err)
 		os.Exit(1)
 	}
@@ -75,7 +75,7 @@ func RunCLI(cfg config.Config) {
 	logger.Info("Starting vanity generation",
 		"prefix", cfg.Prefix,
 		"suffix", cfg.Suffix,
-		"regex", cfg.Regex,
+		"regexp", cfg.Regexp,
 		"threads", cfg.Concurrency,
 		"timeout", cfg.Timeout,
 	)

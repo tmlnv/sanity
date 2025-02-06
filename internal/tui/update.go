@@ -18,7 +18,7 @@ import (
 const (
 	prefixStep = iota
 	suffixStep
-	regexStep
+	regexpStep
 	numbAddressesStep
 	numThreadsStep
 	timeoutStep
@@ -155,10 +155,10 @@ func (m *Model) handleDurationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m *Model) parseInputs() error {
 	m.config.Prefix = m.inputs[prefixStep].Value()
 	m.config.Suffix = m.inputs[suffixStep].Value()
-	m.config.Regex = m.inputs[regexStep].Value()
+	m.config.Regexp = m.inputs[regexpStep].Value()
 
 	// Validate Solana address pattern
-	if err := validator.ValidateSolana(m.config.Prefix, m.config.Suffix, m.config.Regex); err != nil {
+	if err := validator.ValidateSolana(m.config.Prefix, m.config.Suffix, m.config.Regexp); err != nil {
 		return err
 	}
 

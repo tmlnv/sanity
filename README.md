@@ -1,6 +1,7 @@
 # Sanity
 
-Solana vanity address generator with a beautiful and intuitive CLI & TUI. Generate custom Solana wallet addresses with your desired prefix.
+Solana vanity address generator with a beautiful and intuitive CLI & TUI.
+Generate custom Solana wallet addresses with your desired prefix, suffix & regexp.
 
 ## Features
 
@@ -60,7 +61,8 @@ sanity -prefix abc -n 1 -t 4 -timeout 5m
 
 ## Security
 
-Generated private keys are automatically saved to a file in your current directory. Keep these keys secure and never share them.
+Generated private keys are automatically saved to a file in your current directory.
+Keep these keys secure and never share them.
 
 ## Disclaimer
 

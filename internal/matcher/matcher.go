@@ -10,19 +10,19 @@ import (
 type Matcher struct {
 	prefix string
 	suffix string
-	regex  *regexp.Regexp
+	regexp *regexp.Regexp
 }
 
 func NewMatcher(cfg config.Config) *Matcher {
 	var re *regexp.Regexp
-	if cfg.Regex != "" {
-		re = regexp.MustCompile(cfg.Regex)
+	if cfg.Regexp != "" {
+		re = regexp.MustCompile(cfg.Regexp)
 	}
 
 	return &Matcher{
 		prefix: cfg.Prefix,
 		suffix: cfg.Suffix,
-		regex:  re,
+		regexp: re,
 	}
 }
 
@@ -35,7 +35,7 @@ func (m *Matcher) Match(address string) bool {
 		return false
 	}
 
-	if m.regex != nil && !m.regex.MatchString(address) {
+	if m.regexp != nil && !m.regexp.MatchString(address) {
 		return false
 	}
 

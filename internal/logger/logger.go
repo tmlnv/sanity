@@ -1,4 +1,3 @@
-// logger/logger.go
 package logger
 
 import (
@@ -13,11 +12,10 @@ import (
 
 var (
 	instance *log.Logger
-	file     *os.File // Store the file handle
+	file     *os.File
 	mu       sync.Mutex
 )
 
-// Init initializes the logger with the specified log file.
 func Init(logFile string) {
 	mu.Lock()
 	defer mu.Unlock()
