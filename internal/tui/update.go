@@ -10,7 +10,9 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/tmlnv/sanity/internal/generator"
+	"github.com/tmlnv/sanity/internal/validator"
 )
 
 const (
@@ -104,7 +106,10 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 			case timeoutStep:
 				m.step++
 			case submitStep:
-				m.parseInputs()
+				if err := m.parseInputs(); err != nil {
+					m.err = err
+					return m, nil
+				}
 				go m.startGeneration()
 				return m, tea.Batch(
 					m.spinner.Tick,
@@ -147,10 +152,15 @@ func (m *Model) handleDurationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) parseInputs() {
+func (m *Model) parseInputs() error {
 	m.config.Prefix = m.inputs[prefixStep].Value()
 	m.config.Suffix = m.inputs[suffixStep].Value()
 	m.config.Regex = m.inputs[regexStep].Value()
+
+	// Validate Solana address pattern
+	if err := validator.ValidateSolana(m.config.Prefix, m.config.Suffix, m.config.Regex); err != nil {
+		return err
+	}
 
 	if val := m.inputs[numbAddressesStep].Value(); val != "" {
 		m.config.NumAddresses, _ = strconv.Atoi(val)
@@ -172,6 +182,8 @@ func (m *Model) parseInputs() {
 			m.config.Timeout, _ = time.ParseDuration(val)
 		}
 	}
+
+	return nil
 }
 
 func (m *Model) handleInput() (*Model, tea.Cmd) {

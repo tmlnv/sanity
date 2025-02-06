@@ -10,6 +10,7 @@ import (
 	"github.com/tmlnv/sanity/internal/ctx"
 	"github.com/tmlnv/sanity/internal/generator"
 	"github.com/tmlnv/sanity/internal/logger"
+	"github.com/tmlnv/sanity/internal/validator"
 )
 
 func ParseFlags() config.Config {
@@ -41,6 +42,12 @@ func ParseFlags() config.Config {
 }
 
 func RunCLI(cfg config.Config) {
+	// Validate Solana address pattern before starting
+	if err := validator.ValidateSolana(cfg.Prefix, cfg.Suffix, cfg.Regex); err != nil {
+		logger.Error("Validation error", "error", err)
+		os.Exit(1)
+	}
+
 	ctx, cancel := ctx.CreateContext(cfg)
 	defer cancel()
 

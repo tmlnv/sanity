@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gagliardetto/solana-go"
+
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/logger"
 	"github.com/tmlnv/sanity/internal/matcher"

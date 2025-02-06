@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	"github.com/charmbracelet/lipgloss"
+
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/ctx"
 	"github.com/tmlnv/sanity/internal/generator"
