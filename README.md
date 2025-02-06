@@ -73,3 +73,13 @@ This tool is for educational and experimental purposes only. Please be aware tha
 ## License
 
 MIT License - see LICENSE file for details
+
+## TODO
+
+- [ ] Validate address input to be compatible with Solana to not
+      waste resources trying to find the impossible one.
+- [ ] Suffix
+- [ ] Regexp
+- [x] Timeout input proper validation.
+- [ ] Validate timeout from pure number for CLI
+- [ ] Case sensitivity
