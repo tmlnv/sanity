@@ -16,6 +16,7 @@ import (
 const (
 	prefixStep = iota
 	suffixStep
+	regexStep
 	numbAddressesStep
 	numThreadsStep
 	timeoutStep
@@ -149,6 +150,7 @@ func (m *Model) handleDurationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m *Model) parseInputs() {
 	m.config.Prefix = m.inputs[prefixStep].Value()
 	m.config.Suffix = m.inputs[suffixStep].Value()
+	m.config.Regex = m.inputs[regexStep].Value()
 
 	if val := m.inputs[numbAddressesStep].Value(); val != "" {
 		m.config.NumAddresses, _ = strconv.Atoi(val)
