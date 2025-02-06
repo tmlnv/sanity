@@ -15,13 +15,14 @@ import (
 
 func ParseFlags() config.Config {
 	var cfg config.Config
+	var timeoutStr string
 
 	flag.StringVar(&cfg.Prefix, "prefix", "", "Vanity prefix for Solana address")
 	flag.StringVar(&cfg.Suffix, "suffix", "", "Vanity suffix for Solana address")
 	flag.StringVar(&cfg.Regex, "regex", "", "Regex pattern to match")
 	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
 	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
-	flag.DurationVar(&cfg.Timeout, "timeout", 0, "Maximum search duration")
+	flag.StringVar(&timeoutStr, "timeout", "0", "Maximum search duration (e.g., 30s, 5m, or number of seconds)")
 	flag.StringVar(&cfg.LogFile, "logfile", config.LogFile, "Path to log file")
 	flag.StringVar(&cfg.PrivateKeysFile, "private mkeys file", config.PrivateKeysFile, "Path to log file")
 	showVersion := flag.Bool("version", false, "Show version")
@@ -35,6 +36,15 @@ func ParseFlags() config.Config {
 
 	if cfg.Concurrency <= 0 {
 		cfg.Concurrency = runtime.NumCPU()
+	}
+
+	// Validate and parse timeout
+	if duration, err := validator.ValidateTimeout(timeoutStr); err != nil {
+		// fmt.Printf instead of logger.Error because logger is not initialized yet
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	} else {
+		cfg.Timeout = duration
 	}
 
 	cfg.FlagsProvided = flag.NFlag() > 0

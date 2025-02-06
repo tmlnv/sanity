@@ -72,4 +72,3 @@ func validateRegexPattern(pattern string) error {
 
 	return nil
 }
-
