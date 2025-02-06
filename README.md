@@ -32,7 +32,7 @@ go build -o sanity ./cmd/sanity
 Simply run the program without any flags to enter TUI mode:
 
 ```bash
-sanity
+./sanity
 ```
 
 In TUI mode, you can:
@@ -49,7 +49,7 @@ Use Tab/Shift+Tab or Up/Down arrows to navigate between fields.
 Run with flags for CLI mode:
 
 ```bash
-sanity -prefix <desired_prefix> [-n <number_of_addresses>] [-t <threads>] [-timeout <duration>]
+./sanity -prefix <desired_prefix> [-n <number_of_addresses>] [-t <threads>] [-timeout <duration>]
 ```
 
 Example:
@@ -81,6 +81,6 @@ MIT License - see LICENSE file for details
 - [x] Suffix
 - [x] Regexp
 - [x] Timeout input proper validation.
-- [ ] Validate timeout from pure number for CLI
-- [ ] Case sensitivity
-- [ ] CLI help
+- [x] Validate timeout from pure number for CLI
+- [x] Case sensitivity
+- [x] CLI help

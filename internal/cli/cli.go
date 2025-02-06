@@ -17,6 +17,17 @@ func ParseFlags() config.Config {
 	var cfg config.Config
 	var timeoutStr string
 
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Sanity - Solana Vanity Address Generator\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: sanity [options]\n\n")
+		fmt.Fprintf(os.Stderr, "Options:\n")
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
+		fmt.Fprintf(os.Stderr, "  Generate an address with prefix 'sol':\n    $ sanity -prefix sol\n\n")
+		fmt.Fprintf(os.Stderr, "  Generate 5 addresses with suffix 'eth':\n    $ sanity -suffix eth -count 5\n\n")
+		fmt.Fprintf(os.Stderr, "  Generate addresses matching regex with timeout:\n    $ sanity -regex '^sol.*eth$' -timeout 5m\n")
+	}
+
 	flag.StringVar(&cfg.Prefix, "prefix", "", "Vanity prefix for Solana address")
 	flag.StringVar(&cfg.Suffix, "suffix", "", "Vanity suffix for Solana address")
 	flag.StringVar(&cfg.Regex, "regex", "", "Regex pattern to match")
@@ -24,8 +35,8 @@ func ParseFlags() config.Config {
 	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
 	flag.StringVar(&timeoutStr, "timeout", "0", "Maximum search duration (e.g., 30s, 5m, or number of seconds)")
 	flag.StringVar(&cfg.LogFile, "logfile", config.LogFile, "Path to log file")
-	flag.StringVar(&cfg.PrivateKeysFile, "private mkeys file", config.PrivateKeysFile, "Path to log file")
-	showVersion := flag.Bool("version", false, "Show version")
+	flag.StringVar(&cfg.PrivateKeysFile, "private-keys", config.PrivateKeysFile, "Path to private keys file")
+	showVersion := flag.Bool("version", false, "Show version information")
 
 	flag.Parse()
 
