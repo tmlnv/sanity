@@ -15,6 +15,7 @@ import (
 
 const (
 	prefixStep = iota
+	suffixStep
 	numbAddressesStep
 	numThreadsStep
 	timeoutStep
@@ -146,13 +147,14 @@ func (m *Model) handleDurationInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) parseInputs() {
-	m.config.Prefix = m.inputs[0].Value()
+	m.config.Prefix = m.inputs[prefixStep].Value()
+	m.config.Suffix = m.inputs[suffixStep].Value()
 
-	if val := m.inputs[1].Value(); val != "" {
+	if val := m.inputs[numbAddressesStep].Value(); val != "" {
 		m.config.NumAddresses, _ = strconv.Atoi(val)
 	}
 
-	if val := m.inputs[2].Value(); val != "" {
+	if val := m.inputs[numThreadsStep].Value(); val != "" {
 		if threads, _ := strconv.Atoi(val); threads > 0 {
 			m.config.Concurrency = threads
 		} else {
@@ -160,7 +162,7 @@ func (m *Model) parseInputs() {
 		}
 	}
 
-	if val := m.inputs[3].Value(); val != "" {
+	if val := m.inputs[timeoutStep].Value(); val != "" {
 		// Handle pure numeric input as seconds
 		if dur, err := strconv.Atoi(val); err == nil {
 			m.config.Timeout = time.Duration(dur) * time.Second
