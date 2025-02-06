@@ -76,10 +76,11 @@ MIT License - see LICENSE file for details
 
 ## TODO
 
-- [ ] Validate address input to be compatible with Solana to not
+- [x] Validate address input to be compatible with Solana to not
       waste resources trying to find the impossible one.
-- [ ] Suffix
-- [ ] Regexp
+- [x] Suffix
+- [x] Regexp
 - [x] Timeout input proper validation.
 - [ ] Validate timeout from pure number for CLI
 - [ ] Case sensitivity
+- [ ] CLI help
