@@ -14,7 +14,10 @@ func main() {
 	logger.Init(cfg.LogFile)
 	defer logger.Close()
 
-	saver.Init(cfg.PrivateKeysFile)
+	if err := saver.Init(cfg.PrivateKeysFile); err != nil {
+		logger.Error("Failed to initialize saver", "error", err)
+		os.Exit(1)
+	}
 	defer saver.Close()
 
 	if !cfg.FlagsProvided {
