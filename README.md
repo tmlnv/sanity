@@ -86,3 +86,4 @@ MIT License - see LICENSE file for details
 - [x] Validate timeout from pure number for CLI
 - [x] Case sensitivity
 - [x] CLI help
+- [ ] Tests

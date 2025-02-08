@@ -3,7 +3,6 @@ package saver
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"sync"
 )
@@ -14,20 +13,21 @@ var (
 )
 
 // Init initializes the key saver with the specified output file
-func Init(outputFile string) {
+func Init(outputFile string) error {
 	mu.Lock()
 	defer mu.Unlock()
 
 	if outputFile == "" {
-		log.Fatal("output file path cannot be empty")
+		return fmt.Errorf("output file path cannot be empty")
 	}
 
 	file, err := os.OpenFile(outputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Fatalf("could not open output file: %v", err)
+		return fmt.Errorf("could not open output file: %v", err)
 	}
 
 	instance = file
+	return nil
 }
 
 // SaveKeyPair safely writes a public-private key pair to the output file
@@ -54,7 +54,9 @@ func Close() error {
 	defer mu.Unlock()
 
 	if instance != nil {
-		return instance.Close()
+		err := instance.Close()
+		instance = nil
+		return err
 	}
 	return nil
 }
