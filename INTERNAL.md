@@ -2,7 +2,7 @@
 
 This document contains notes for development.
 
-## Running Tests
+## Tests
 
 - To run all tests:
 
@@ -10,14 +10,20 @@ This document contains notes for development.
   go test ./...
   ```
 
-  To get coverage:
+- To get coverage:
 
   ```bash
   go test -cover ./... -coverprofile=coverage.out
   ```
 
-  To view coverage:
+- To view coverage:
 
   ```bash
   go tool cover -html=coverage.out
+  ```
+
+- To generate test blueprint:
+
+  ```bash
+  gotests -all -w ./
   ```
