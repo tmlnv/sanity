@@ -62,7 +62,7 @@ func InitialModel() Model {
 		{1, "Vanity suffix:", nil},
 		{2, "Vanity regexp:", nil},
 		{3, "Number of addresses to find (0=infinite) (default 1):", validator.ValidateNumber},
-		{4, fmt.Sprintf("Threads (0=auto, CPUs available: %d):", runtime.NumCPU()), validator.ValidateNumber},
+		{4, fmt.Sprintf("Workers (0=auto, CPUs available: %d):", runtime.NumCPU()), validator.ValidateNumber},
 		{5, "Timeout (e.g. 30s, 5m):", validator.ValidateDuration},
 	}
 

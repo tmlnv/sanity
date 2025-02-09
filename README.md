@@ -50,14 +50,33 @@ Use Tab/Shift+Tab or Up/Down arrows to navigate between fields.
 Run with flags for CLI mode:
 
 ```bash
-./sanity -prefix <desired_prefix> [-n <number_of_addresses>] [-t <threads>] [-timeout <duration>]
+./sanity [-prefix <prefix>] [-suffix <suffix>] [-regexp <pattern>] [-count <number>] [-workers <workers>] [-timeout <duration>]
 ```
 
-Example:
+Examples:
 
 ```bash
-sanity -prefix abc -n 1 -t 4 -timeout 5m
+# Generate address with prefix
+sanity -prefix 123 -count 1 -threads 4 -timeout 5m
+
+# Generate address with suffix
+sanity -suffix 123 -count 2
+
+# Generate address with both prefix and suffix
+sanity -prefix 123 -suffix 321
+
+# Generate address matching regular expression
+sanity -regexp '^123.*321$' -timeout 10m
 ```
+
+Options:
+
+- `-prefix`: Desired prefix for the address
+- `-suffix`: Desired suffix for the address
+- `-regexp`: Regular expression pattern to match
+- `-count`: Number of addresses to generate (default: 1)
+- `-workers`: Number of concurrent workers (default: CPU cores)
+- `-timeout`: Maximum duration to search (e.g., "30s", "5m", "1h")
 
 ## Security
 
@@ -71,10 +90,6 @@ This tool is for educational and experimental purposes only. Please be aware tha
 - Generated addresses and private keys should be thoroughly verified before use
 - Always follow best security practices when handling cryptocurrency wallets
 - The author is not responsible for anything
-
-## License
-
-MIT License - see LICENSE file for details
 
 ## TODO
 

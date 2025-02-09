@@ -32,7 +32,7 @@ func ParseFlags() config.Config {
 	flag.StringVar(&cfg.Suffix, "suffix", "", "Vanity suffix for Solana address")
 	flag.StringVar(&cfg.Regexp, "regexp", "", "Regex pattern to match")
 	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
-	flag.IntVar(&cfg.Concurrency, "threads", 0, "Number of worker threads (0=auto)")
+	flag.IntVar(&cfg.Concurrency, "workers", 0, "Number of workers (0=auto)")
 	flag.StringVar(&timeoutStr, "timeout", "0", "Maximum search duration (e.g., 30s, 5m, or number of seconds)")
 	flag.StringVar(&cfg.LogFile, "logfile", config.LogFile, "Path to log file")
 	flag.StringVar(&cfg.PrivateKeysFile, "private-keys", config.PrivateKeysFile, "Path to private keys file")
@@ -76,7 +76,7 @@ func RunCLI(cfg config.Config) {
 		"prefix", cfg.Prefix,
 		"suffix", cfg.Suffix,
 		"regexp", cfg.Regexp,
-		"threads", cfg.Concurrency,
+		"workers", cfg.Concurrency,
 		"timeout", cfg.Timeout,
 	)
 
