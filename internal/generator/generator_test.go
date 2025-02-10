@@ -114,12 +114,10 @@ func Test_worker(t *testing.T) {
 
 	// Wait for either completion or timeout
 	done := make(chan struct{})
-	// go func() {
-	// 	wg.Wait()
-	// 	close(done)
-	// }()
-	wg.Wait()
-	close(done)
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
 
 	select {
 	case <-done:

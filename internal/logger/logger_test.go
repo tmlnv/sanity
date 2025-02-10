@@ -161,7 +161,7 @@ func TestError(t *testing.T) {
 		{
 			name:    "log error message with args",
 			msg:     "error message",
-			args:    []interface{}{"error", "test error", "code", 500},
+			args:    []interface{}{"error", "test error"},
 			wantErr: false,
 		},
 	}

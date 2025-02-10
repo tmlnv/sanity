@@ -58,7 +58,7 @@ func InitialModel() Model {
 		prompt     string
 		validation func(string) error
 	}{
-		{0, "Vanity prefix (e.g. 'sol'):", nil},
+		{0, "Vanity prefix (e.g. '111'):", nil},
 		{1, "Vanity suffix:", nil},
 		{2, "Vanity regexp:", nil},
 		{3, "Number of addresses to find (0=infinite) (default 1):", validator.ValidateNumber},
