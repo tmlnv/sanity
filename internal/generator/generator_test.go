@@ -104,6 +104,11 @@ func Test_worker(t *testing.T) {
 	defer cancel()
 
 	updateChan := make(chan StatsUpdate, 10)
+	// Drain the update channel to prevent blocking
+	go func() {
+		for range updateChan {
+		}
+	}()
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
 
