@@ -84,7 +84,6 @@ func worker(ctx context.Context, wg *sync.WaitGroup, cfg config.Config, ticker *
 				}
 			}
 		default:
-			atomic.AddUint64(totalAttempts, 1)
 			generateAndCheck(matcher, updateChan, totalFound, totalAttempts, isTui)
 			if cfg.NumAddresses > 0 && atomic.LoadUint64(totalFound) >= uint64(cfg.NumAddresses) {
 				if !isTui {
@@ -102,6 +101,7 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
 
+	atomic.AddUint64(totalAttempts, 1)
 	count := atomic.LoadUint64(totalFound)
 	attempts := atomic.LoadUint64(totalAttempts)
 
