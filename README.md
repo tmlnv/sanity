@@ -1,5 +1,7 @@
 # Sanity
 
+[![codecov](https://codecov.io/gh/tmlnv/sanity/graph/badge.svg?token=PR3E1MGGRZ)](https://codecov.io/gh/tmlnv/sanity)
+
 Solana vanity address generator with a beautiful and intuitive CLI & TUI.
 Generate custom Solana wallet addresses with your desired prefix, suffix & regexp.
 
