@@ -43,7 +43,7 @@ In TUI mode, you can:
 
 1. Enter your desired address prefix
 2. Specify the number of addresses to generate
-3. Set the number of concurrent threads (defaults to CPU cores if left empty)
+3. Set the number of concurrent workers (defaults to CPU cores if left empty)
 4. Configure a timeout duration (e.g., "30s", "5m", "1h")
 
 Use Tab/Shift+Tab or Up/Down arrows to navigate between fields.
@@ -60,7 +60,7 @@ Examples:
 
 ```bash
 # Generate address with prefix
-sanity -prefix 123 -count 1 -threads 4 -timeout 5m
+sanity -prefix 123 -count 1 -workers 4 -timeout 5m
 
 # Generate address with suffix
 sanity -suffix 123 -count 2
