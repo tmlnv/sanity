@@ -122,7 +122,6 @@ func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFo
 		if !isTui {
 			logger.Info("Vanity address found",
 				"address", address,
-				"private", wallet.PrivateKey.String(),
 				"attempts", attempts,
 			)
 		}
