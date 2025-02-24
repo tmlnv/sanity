@@ -109,7 +109,7 @@ func (m Model) finishedView() string {
 		}
 	}
 
-	b.WriteString(fmt.Sprintf("\nCorresponding private keys were written to %v:\n", config.PrivateKeysFile))
+	b.WriteString(fmt.Sprintf("\nCorresponding private keys were written to %v\n", config.PrivateKeysFile))
 
 	return lipgloss.NewStyle().
 		Padding(1, 2).

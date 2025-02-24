@@ -128,7 +128,7 @@ func TestModel_View(t *testing.T) {
 						"• addr1\n" +
 						"• addr2\n" +
 						"• addr3\n\n" +
-						fmt.Sprintf("Corresponding private keys were written to %v:\n", config.PrivateKeysFile))
+						fmt.Sprintf("Corresponding private keys were written to %v\n", config.PrivateKeysFile))
 				if got != want {
 					t.Errorf("got = %v, want %v", got, want)
 				}
@@ -343,7 +343,7 @@ func TestModel_finishedView(t *testing.T) {
 				"Finished\n\n" +
 					"Attempts: 100\n" +
 					"Found: 0\n\n" +
-					fmt.Sprintf("Corresponding private keys were written to %v:\n", config.PrivateKeysFile)),
+					fmt.Sprintf("Corresponding private keys were written to %v\n", config.PrivateKeysFile)),
 		},
 		{
 			name: "finished view with matches",
@@ -362,7 +362,7 @@ func TestModel_finishedView(t *testing.T) {
 					"• addr1\n" +
 					"• addr2\n" +
 					"• addr3\n\n" +
-					fmt.Sprintf("Corresponding private keys were written to %v:\n", config.PrivateKeysFile)),
+					fmt.Sprintf("Corresponding private keys were written to %v\n", config.PrivateKeysFile)),
 		},
 	}
 	for _, tt := range tests {
