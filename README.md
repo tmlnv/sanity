@@ -6,6 +6,8 @@
 Solana vanity address generator with a beautiful and intuitive CLI & TUI.
 Generate custom Solana wallet addresses with your desired prefix, suffix & regexp.
 
+![demo_tui](https://tmlnv.com/sanity_demo.gif)
+
 ## Features
 
 - Intuitive Terminal User Interface (TUI)
