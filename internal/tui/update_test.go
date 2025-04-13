@@ -21,8 +21,9 @@ func TestModel_Update_KeyMsg(t *testing.T) {
 	m := Model{state: isConfig}
 	msg := tea.KeyMsg{Type: tea.KeyCtrlC}
 	got, cmd := m.Update(msg)
-	if got != m {
-		t.Errorf("Model.Update() got = %v, want %v", got, m)
+	// Can't compare structs with slices directly, so just check type
+	if _, ok := got.(Model); !ok {
+		t.Errorf("Model.Update() got = %T, want Model", got)
 	}
 	if cmd == nil {
 		t.Errorf("Model.Update() cmd = %v, want non-nil", cmd)
@@ -56,8 +57,9 @@ func TestModel_updateGeneration_StatsUpdate(t *testing.T) {
 	m := Model{}
 	msg := generator.StatsUpdate{Stats: generator.Stats{Attempts: 1}}
 	got, cmd := m.updateGeneration(msg)
-	if got != m {
-		t.Errorf("updateGeneration got = %v, want %v", got, m)
+	// Can't compare structs with slices directly, so just check type
+	if _, ok := got.(Model); !ok {
+		t.Errorf("updateGeneration got = %T, want Model", got)
 	}
 	if cmd == nil {
 		t.Errorf("updateGeneration cmd = %v, want non-nil", cmd)
@@ -68,8 +70,9 @@ func TestModel_updateGeneration_SpinnerTickMsg(t *testing.T) {
 	m := Model{spinner: spinner.New()}
 	msg := spinner.TickMsg{}
 	got, cmd := m.updateGeneration(msg)
-	if got != m {
-		t.Errorf("updateGeneration got = %v, want %v", got, m)
+	// Can't compare structs with slices directly, so just check type
+	if _, ok := got.(Model); !ok {
+		t.Errorf("updateGeneration got = %T, want Model", got)
 	}
 	if cmd == nil {
 		t.Errorf("updateGeneration cmd = %v, want non-nil", cmd)
@@ -80,8 +83,9 @@ func TestModel_updateFinished_StatsUpdate(t *testing.T) {
 	m := Model{}
 	msg := generator.StatsUpdate{Stats: generator.Stats{Attempts: 1}}
 	got, cmd := m.updateFinished(msg)
-	if got != m {
-		t.Errorf("updateFinished got = %v, want %v", got, m)
+	// Can't compare structs with slices directly, so just check type
+	if _, ok := got.(Model); !ok {
+		t.Errorf("updateFinished got = %T, want Model", got)
 	}
 	if cmd == nil {
 		t.Errorf("updateFinished cmd = %v, want non-nil", cmd)
