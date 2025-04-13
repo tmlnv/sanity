@@ -136,8 +136,8 @@ func TestModel_parseInputs_Valid(t *testing.T) {
 	if m.config.Concurrency != 2 {
 		t.Errorf("parseInputs() Concurrency = %v, want 2", m.config.Concurrency)
 	}
-	if m.config.Timeout != 1 {
-		t.Errorf("parseInputs() Timeout = %v, want 1", m.config.Timeout)
+	if m.config.Timeout != 1*time.Second {
+		t.Errorf("parseInputs() Timeout = %v, want 1s", m.config.Timeout)
 	}
 }
 
