@@ -13,589 +13,183 @@ import (
 )
 
 func TestModel_Init(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			if got := m.Init(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.Init() = %v, want %v", got, tt.want)
-			}
-		})
+	m := Model{}
+	got := m.Init()
+	if got == nil {
+		t.Errorf("Model.Init() = %v, want non-nil tea.Cmd", got)
 	}
 }
 
-func TestModel_Update(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_Update_KeyMsg(t *testing.T) {
+	m := Model{state: isConfig}
+	msg := tea.KeyMsg{Type: tea.KeyCtrlC}
+	got, cmd := m.Update(msg)
+	if got != m {
+		t.Errorf("Model.Update() got = %v, want %v", got, m)
 	}
-	type args struct {
-		msg tea.Msg
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   tea.Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.Update(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.Update() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.Update() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	if cmd == nil {
+		t.Errorf("Model.Update() cmd = %v, want non-nil", cmd)
 	}
 }
 
-func TestModel_handleStatsUpdate(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_handleStatsUpdate_Finished(t *testing.T) {
+	called := false
+	cancel := func() { called = true }
+	m := &Model{
+		cancel: cancel,
 	}
-	type args struct {
-		update generator.StatsUpdate
+	update := generator.StatsUpdate{
+		Stats:      generator.Stats{Attempts: 1, Found: 1},
+		LastMatch:  "match",
+		IsFinished: true,
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   tea.Cmd
-	}{
-		// TODO: Add test cases.
+	cmd := m.handleStatsUpdate(update)
+	if m.state != isFinished {
+		t.Errorf("handleStatsUpdate did not set state to isFinished")
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			if got := m.handleStatsUpdate(tt.args.update); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.handleStatsUpdate() = %v, want %v", got, tt.want)
-			}
-		})
+	if !called {
+		t.Errorf("handleStatsUpdate did not call cancel")
+	}
+	if cmd == nil {
+		t.Errorf("handleStatsUpdate did not return tea.Quit")
 	}
 }
 
-func TestModel_updateGeneration(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_updateGeneration_StatsUpdate(t *testing.T) {
+	m := Model{}
+	msg := generator.StatsUpdate{Stats: generator.Stats{Attempts: 1}}
+	got, cmd := m.updateGeneration(msg)
+	if got != m {
+		t.Errorf("updateGeneration got = %v, want %v", got, m)
 	}
-	type args struct {
-		msg tea.Msg
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   tea.Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.updateGeneration(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.updateGeneration() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.updateGeneration() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	if cmd == nil {
+		t.Errorf("updateGeneration cmd = %v, want non-nil", cmd)
 	}
 }
 
-func TestModel_updateFinished(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_updateGeneration_SpinnerTickMsg(t *testing.T) {
+	m := Model{spinner: spinner.New()}
+	msg := spinner.TickMsg{}
+	got, cmd := m.updateGeneration(msg)
+	if got != m {
+		t.Errorf("updateGeneration got = %v, want %v", got, m)
 	}
-	type args struct {
-		msg tea.Msg
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   tea.Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.updateFinished(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.updateFinished() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.updateFinished() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	if cmd == nil {
+		t.Errorf("updateGeneration cmd = %v, want non-nil", cmd)
 	}
 }
 
-func TestModel_updateInputs(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_updateFinished_StatsUpdate(t *testing.T) {
+	m := Model{}
+	msg := generator.StatsUpdate{Stats: generator.Stats{Attempts: 1}}
+	got, cmd := m.updateFinished(msg)
+	if got != m {
+		t.Errorf("updateFinished got = %v, want %v", got, m)
 	}
-	type args struct {
-		msg tea.Msg
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   tea.Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.updateInputs(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.updateInputs() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.updateInputs() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	if cmd == nil {
+		t.Errorf("updateFinished cmd = %v, want non-nil", cmd)
 	}
 }
 
-func TestModel_handleDurationInput(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_updateInputs_Enter(t *testing.T) {
+	m := &Model{
+		step: timeoutStep,
+		inputs: make([]textinput.Model, submitStep+1),
 	}
-	type args struct {
-		msg tea.KeyMsg
-	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   tea.Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.handleDurationInput(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.handleDurationInput() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.handleDurationInput() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	msg := tea.KeyMsg{Type: tea.KeyEnter}
+	got, _ := m.updateInputs(msg)
+	if got == nil {
+		t.Errorf("updateInputs should not return nil")
 	}
 }
 
-func TestModel_parseInputs(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_handleDurationInput_Number(t *testing.T) {
+	m := &Model{
+		inputs: make([]textinput.Model, timeoutStep+1),
 	}
-	tests := []struct {
-		name    string
-		fields  fields
-		wantErr bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			if err := m.parseInputs(); (err != nil) != tt.wantErr {
-				t.Errorf("Model.parseInputs() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
+	m.inputs[timeoutStep] = textinput.New()
+	msg := tea.KeyMsg{Runes: []rune("1")}
+	got, _ := m.handleDurationInput(msg)
+	if got == nil {
+		t.Errorf("handleDurationInput should not return nil")
 	}
 }
 
-func TestModel_handleInput(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_parseInputs_Valid(t *testing.T) {
+	m := &Model{
+		inputs: make([]textinput.Model, timeoutStep+1),
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   *Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
+	for i := range m.inputs {
+		m.inputs[i] = textinput.New()
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.handleInput()
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.handleInput() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.handleInput() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	m.inputs[numbAddressesStep].SetValue("2")
+	m.inputs[numThreadsStep].SetValue("2")
+	m.inputs[timeoutStep].SetValue("1")
+	err := m.parseInputs()
+	if err != nil {
+		t.Errorf("parseInputs() error = %v, want nil", err)
+	}
+	if m.config.NumAddresses != 2 {
+		t.Errorf("parseInputs() NumAddresses = %v, want 2", m.config.NumAddresses)
+	}
+	if m.config.Concurrency != 2 {
+		t.Errorf("parseInputs() Concurrency = %v, want 2", m.config.Concurrency)
+	}
+	if m.config.Timeout != 1 {
+		t.Errorf("parseInputs() Timeout = %v, want 1", m.config.Timeout)
 	}
 }
 
-func TestModel_handleNavigation(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+func TestModel_handleInput_StepAdvance(t *testing.T) {
+	m := &Model{
+		inputs: make([]textinput.Model, submitStep+1),
+		step:   0,
 	}
-	type args struct {
-		msg tea.KeyMsg
+	for i := range m.inputs {
+		m.inputs[i] = textinput.New()
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
+	got, _ := m.handleInput()
+	if got.step != 1 {
+		t.Errorf("handleInput() step = %v, want 1", got.step)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.handleNavigation(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.handleNavigation() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.handleNavigation() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+}
+
+func TestModel_handleNavigation_UpDown(t *testing.T) {
+	m := &Model{
+		inputs: make([]textinput.Model, submitStep+1),
+		step:   0,
+	}
+	for i := range m.inputs {
+		m.inputs[i] = textinput.New()
+	}
+	msg := tea.KeyMsg{Type: tea.KeyUp}
+	got, _ := m.handleNavigation(msg)
+	if got == nil {
+		t.Errorf("handleNavigation() should not return nil")
 	}
 }
 
 func TestModel_updateFocusedInput(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+	m := &Model{
+		inputs: make([]textinput.Model, submitStep+1),
+		step:   0,
 	}
-	type args struct {
-		msg tea.Msg
+	for i := range m.inputs {
+		m.inputs[i] = textinput.New()
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-		want   *Model
-		want1  tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := &Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			got, got1 := m.updateFocusedInput(tt.args.msg)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.updateFocusedInput() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("Model.updateFocusedInput() got1 = %v, want %v", got1, tt.want1)
-			}
-		})
+	got, _ := m.updateFocusedInput(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("a")})
+	if got == nil {
+		t.Errorf("updateFocusedInput() should not return nil")
 	}
 }
 
 func TestModel_listenForUpdates(t *testing.T) {
-	type fields struct {
-		inputs        []textinput.Model
-		step          int
-		spinner       spinner.Model
-		state         modelState
-		config        config.Config
-		stats         generator.Stats
-		lastGenerated []string
-		matched       []string
-		err           error
-		updateChan    chan generator.StatsUpdate
-		cancel        context.CancelFunc
+	m := Model{
+		updateChan: make(chan generator.StatsUpdate, 1),
 	}
-	tests := []struct {
-		name   string
-		fields fields
-		want   tea.Cmd
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := Model{
-				inputs:        tt.fields.inputs,
-				step:          tt.fields.step,
-				spinner:       tt.fields.spinner,
-				state:         tt.fields.state,
-				config:        tt.fields.config,
-				stats:         tt.fields.stats,
-				lastGenerated: tt.fields.lastGenerated,
-				matched:       tt.fields.matched,
-				err:           tt.fields.err,
-				updateChan:    tt.fields.updateChan,
-				cancel:        tt.fields.cancel,
-			}
-			if got := m.listenForUpdates(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Model.listenForUpdates() = %v, want %v", got, tt.want)
-			}
-		})
+	m.updateChan <- generator.StatsUpdate{Stats: generator.Stats{Attempts: 1}}
+	cmd := m.listenForUpdates()
+	if cmd == nil {
+		t.Errorf("listenForUpdates() should not return nil")
 	}
 }
