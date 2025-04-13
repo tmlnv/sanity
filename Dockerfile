@@ -20,6 +20,8 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /sanity .
 # Use a minimal base image
 FROM alpine:latest
 
+WORKDIR /app
+
 # Copy the built binary from the builder stage
 COPY --from=builder /sanity /usr/local/bin/sanity
 
