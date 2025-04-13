@@ -32,10 +32,10 @@ Run the application using Docker:
 ```bash
 # Run in TUI mode (interactive)
 # Note: TUI rendering (colors, cursor) might vary depending on your terminal and Docker setup and not provide a full experience using Docker.
-docker run -it --rm tmlnv/sanity:latest
+docker run -it --rm -v "$(pwd):/app" tmlnv/sanity:latest
 
 # Run in CLI mode with flags
-docker run --rm tmlnv/sanity:latest -prefix 333 -count 1
+docker run --rm -v "$(pwd):/app" tmlnv/sanity:latest -prefix 333 -count 1
 
 # To save generated keys to your current host directory, mount a volume:
 # The default PrivateKeysFile is 'sanity.private.log' in the container's working directory.
