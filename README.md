@@ -31,17 +31,18 @@ Run the application using Docker:
 
 ```bash
 # Run in TUI mode (interactive)
-# Note: TUI rendering (colors, cursor) might vary depending on your terminal and Docker setup.
+# Note: TUI rendering (colors, cursor) might vary depending on your terminal and Docker setup and not provide a full experience using Docker.
 docker run -it --rm tmlnv/sanity:latest
 
 # Run in CLI mode with flags
-docker run --rm tmlnv/sanity:latest -prefix test -count 1
+docker run --rm tmlnv/sanity:latest -prefix 333 -count 1
 
 # To save generated keys to your current host directory, mount a volume:
 # The default PrivateKeysFile is 'sanity.private.log' in the container's working directory.
-docker run -it --rm -v "$(pwd):/app" tmlnv/sanity:latest -prefix test
+docker run -it --rm -v "$(pwd):/app" tmlnv/sanity:latest -prefix 333
 ```
-*(The example above mounts the current host directory to `/app` inside the container. Since the container's default working directory might not be `/app`, keys will be saved relative to that default unless the `-w /app` flag is added or the application is configured to save specifically to `/app/sanity.private.log`)*
+
+_(The example above mounts the current host directory to `/app` inside the container. Since the container's default working directory might not be `/app`, keys will be saved relative to that default unless the `-w /app` flag is added or the application is configured to save specifically to `/app/sanity.private.log`)_
 
 ## Usage
 
