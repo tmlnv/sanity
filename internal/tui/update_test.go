@@ -1,14 +1,11 @@
 package tui
 
 import (
-	"context"
-	"reflect"
 	"testing"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/generator"
 )
 
@@ -93,7 +90,7 @@ func TestModel_updateFinished_StatsUpdate(t *testing.T) {
 
 func TestModel_updateInputs_Enter(t *testing.T) {
 	m := &Model{
-		step: timeoutStep,
+		step:   timeoutStep,
 		inputs: make([]textinput.Model, submitStep+1),
 	}
 	msg := tea.KeyMsg{Type: tea.KeyEnter}
