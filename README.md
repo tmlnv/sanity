@@ -21,28 +21,27 @@ Generate custom Solana wallet addresses with your desired prefix, suffix & regex
 
 ### Using Docker
 
-Build the Docker image:
+Pull the image from Docker Hub:
 
 ```bash
-docker build -t sanity .
+docker pull tmlnv/sanity:latest
 ```
 
 Run the application using Docker:
 
 ```bash
 # Run in TUI mode (interactive)
-docker run -it --rm sanity
+# Note: TUI rendering (colors, cursor) might vary depending on your terminal and Docker setup.
+docker run -it --rm tmlnv/sanity:latest
 
 # Run in CLI mode with flags
-docker run --rm sanity -prefix test -count 1
+docker run --rm tmlnv/sanity:latest -prefix test -count 1
 
-# To save generated keys to your current directory, mount a volume:
-# Note: Adjust the target path inside the container if the application
-# saves keys to a specific location other than the working directory.
-# The default PrivateKeysFile is 'sanity.private.log' in the current directory.
-docker run -it --rm -v "$(pwd):/app" -w /app sanity -prefix test
+# To save generated keys to your current host directory, mount a volume:
+# The default PrivateKeysFile is 'sanity.private.log' in the container's working directory.
+docker run -it --rm -v "$(pwd):/app" tmlnv/sanity:latest -prefix test
 ```
-*(The example above mounts the current host directory to `/app` inside the container and sets `/app` as the working directory, so `sanity.private.log` will be saved in your current host directory.)*
+*(The example above mounts the current host directory to `/app` inside the container. Since the container's default working directory might not be `/app`, keys will be saved relative to that default unless the `-w /app` flag is added or the application is configured to save specifically to `/app/sanity.private.log`)*
 
 ## Usage
 
