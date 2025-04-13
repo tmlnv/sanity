@@ -1,5 +1,6 @@
 # ---- Builder Stage ----
-FROM golang:1.22-alpine AS builder
+# Use a Go version compatible with go.mod (1.23.4)
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
 
@@ -12,7 +13,6 @@ COPY . .
 
 # Build the application
 # -ldflags="-w -s" strips debug information and symbols, reducing binary size
-# Use the correct Go version from go.mod (1.23.4)
 # Ensure the output path is correct for the copy command below
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /sanity ./cmd/sanity
 
