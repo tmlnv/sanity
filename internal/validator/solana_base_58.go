@@ -2,87 +2,91 @@ package validator
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
+
+	"github.com/dlclark/regexp2"
 )
 
-// Base58 alphabet used by Solana addresses
+// --------------------------------- constants ---------------------------------
+
+// Base58 alphabet used by Solana addresses (no 0 O I l)
 const base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
 
-// SolanaAddressLength is the length of a Solana public key in base58 format
+// Length of a Solana public key in base‑58
 const SolanaAddressLength = 44
 
-// ValidateSolana checks if the provided prefix, suffix, and regexp pattern could potentially
-// match a valid Solana address
-func ValidateSolana(prefix, suffix, regexpPattern string) error {
-	// Check prefix
+// --------------------------------- public API --------------------------------
+
+// ValidateSolana checks that prefix, suffix and (optionally) a regexp pattern
+// could still match a valid 44‑char Solana public key.
+func ValidateSolana(prefix, suffix, pattern string) error {
 	if err := validateBase58String(prefix); err != nil {
-		return fmt.Errorf("invalid prefix: %v", err)
+		return fmt.Errorf("invalid prefix: %w", err)
 	}
-
-	// Check suffix
 	if err := validateBase58String(suffix); err != nil {
-		return fmt.Errorf("invalid suffix: %v", err)
+		return fmt.Errorf("invalid suffix: %w", err)
 	}
-
-	// Check combined length
 	if len(prefix)+len(suffix) > SolanaAddressLength {
-		return fmt.Errorf("combined prefix and suffix length (%d) exceeds Solana address length (%d)",
+		return fmt.Errorf("combined prefix + suffix length (%d) exceeds %d",
 			len(prefix)+len(suffix), SolanaAddressLength)
 	}
-
-	// Validate regexp if provided
-	if regexpPattern != "" {
-		if err := validateRegexpPattern(regexpPattern); err != nil {
-			return fmt.Errorf("invalid regexp pattern: %v", err)
+	if pattern != "" {
+		if err := validateRegexpPattern(pattern); err != nil {
+			return fmt.Errorf("invalid regexp pattern: %w", err)
 		}
 	}
-
 	return nil
 }
 
-// validateBase58String checks if a string contains only valid base58 characters
+// --------------------------------- internals ---------------------------------
+
+// validateBase58String returns an error if s contains anything outside base‑58.
 func validateBase58String(s string) error {
-	if s == "" {
-		return nil
-	}
-
-	for _, c := range s {
-		if !strings.ContainsRune(base58Chars, c) {
-			return fmt.Errorf("character '%c' is not a valid base58 character", c)
+	for _, r := range s {
+		if !strings.ContainsRune(base58Chars, r) {
+			return fmt.Errorf("character %q is not valid base‑58", r)
 		}
 	}
-
 	return nil
 }
 
-// validateRegexpPattern checks if a regexp pattern is valid and could potentially match
-// a Solana address
+// validateRegexpPattern guarantees that p
+//  1. compiles under github.com/dlclark/regexp2 (so back‑refs are ok) and
+//  2. contains no literal runes outside the base‑58 set (meta‑chars allowed).
+//
+// Digits 0‑9 and ',' are permitted *only* inside a {min,max} quantifier;
+// anything goes inside [...] character classes; escapes are respected.
 func validateRegexpPattern(p string) error {
-	_, err := regexp.Compile(p)
-	if err != nil {
+	// 1 ─ compile with full .NET‑style engine
+	if _, err := regexp2.Compile(p, regexp2.None); err != nil {
 		return err
 	}
 
-	const meta = `.*+?^$()[]{}|\-\\` // no digits here
+	// 2 ─ walk the pattern rune‑by‑rune to vet literals
+	const meta = `.*+?^$()[]{}|\-\\`
 	inClass, escaped, inQuant := false, false, false
 
 	for _, r := range p {
 		switch {
+		// ───────────── handle escapes ─────────────
 		case escaped:
 			escaped = false
 			continue
 		case r == '\\':
 			escaped = true
 			continue
+
+		// ─────────── inside [...] class ───────────
 		case inClass:
 			if r == ']' {
 				inClass = false
 			}
-			continue // everything allowed inside [...]
+			continue // everything is allowed here
 		case r == '[':
 			inClass = true
 			continue
+
+		// ────────── inside {min,max} quantifier ──────────
 		case inQuant:
 			if r == '}' {
 				inQuant = false
@@ -97,15 +101,14 @@ func validateRegexpPattern(p string) error {
 			continue
 		}
 
-		// Outside [], {}, and escapes: only meta or base58 literals
+		// ─────────── literal outside special zones ───────────
 		if strings.ContainsRune(base58Chars, r) {
-			continue
+			continue // valid literal
 		}
 		if strings.ContainsRune(meta, r) {
-			continue
+			continue // accepted meta‑char
 		}
-
-		return fmt.Errorf("character %q is not base58 or regex meta", r)
+		return fmt.Errorf("character %q is not base‑58 or regex meta", r)
 	}
 	return nil
 }
