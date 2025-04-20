@@ -59,15 +59,29 @@ func validateBase58String(s string) error {
 // validateRegexpPattern checks if a regexp pattern is valid and could potentially match
 // a Solana address
 func validateRegexpPattern(pattern string) error {
-	// First check if it's a valid regexp
+	// First check if it's a valid regexp with Go's standard regexp package
 	_, err := regexp.Compile(pattern)
 	if err != nil {
-		return fmt.Errorf("invalid regular expression: %v", err)
+		return err // Pass through the original regex compilation error
 	}
 
-	// Check for obviously invalid patterns
-	if strings.Contains(pattern, "[^"+base58Chars+"]") {
-		return fmt.Errorf("pattern contains characters not valid in base58")
+	// List of valid regex metacharacters and additional characters that should be allowed
+	regexMetaChars := `.*+?^$()[]{}|\\-,`
+
+	// Check each character - it should either be a base58 character or a regex metacharacter
+	for _, c := range pattern {
+		// Skip if it's a valid base58 character
+		if strings.ContainsRune(base58Chars, c) {
+			continue
+		}
+
+		// Skip if it's a valid regex metacharacter
+		if strings.ContainsRune(regexMetaChars, c) {
+			continue
+		}
+
+		// If we get here, the character is neither a valid base58 char nor a regex metachar
+		return fmt.Errorf("character '%c' is neither a valid base58 character nor a regex metacharacter", c)
 	}
 
 	return nil
