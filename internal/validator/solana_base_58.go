@@ -58,31 +58,54 @@ func validateBase58String(s string) error {
 
 // validateRegexpPattern checks if a regexp pattern is valid and could potentially match
 // a Solana address
-func validateRegexpPattern(pattern string) error {
-	// First check if it's a valid regexp with Go's standard regexp package
-	_, err := regexp.Compile(pattern)
+func validateRegexpPattern(p string) error {
+	_, err := regexp.Compile(p)
 	if err != nil {
-		return err // Pass through the original regex compilation error
+		return err
 	}
 
-	// List of valid regex metacharacters and additional characters that should be allowed
-	regexMetaChars := `.*+?^$()[]{}|\\-,`
+	const meta = `.*+?^$()[]{}|\-\\` // no digits here
+	inClass, escaped, inQuant := false, false, false
 
-	// Check each character - it should either be a base58 character or a regex metacharacter
-	for _, c := range pattern {
-		// Skip if it's a valid base58 character
-		if strings.ContainsRune(base58Chars, c) {
+	for _, r := range p {
+		switch {
+		case escaped:
+			escaped = false
+			continue
+		case r == '\\':
+			escaped = true
+			continue
+		case inClass:
+			if r == ']' {
+				inClass = false
+			}
+			continue // everything allowed inside [...]
+		case r == '[':
+			inClass = true
+			continue
+		case inQuant:
+			if r == '}' {
+				inQuant = false
+				continue
+			}
+			if r == ',' || ('0' <= r && r <= '9') {
+				continue
+			}
+			return fmt.Errorf("invalid rune %q in quantifier", r)
+		case r == '{':
+			inQuant = true
 			continue
 		}
 
-		// Skip if it's a valid regex metacharacter
-		if strings.ContainsRune(regexMetaChars, c) {
+		// Outside [], {}, and escapes: only meta or base58 literals
+		if strings.ContainsRune(base58Chars, r) {
+			continue
+		}
+		if strings.ContainsRune(meta, r) {
 			continue
 		}
 
-		// If we get here, the character is neither a valid base58 char nor a regex metachar
-		return fmt.Errorf("character '%c' is neither a valid base58 character nor a regex metacharacter", c)
+		return fmt.Errorf("character %q is not base58 or regex meta", r)
 	}
-
 	return nil
 }

@@ -159,7 +159,7 @@ func Test_validateRegexpPattern(t *testing.T) {
 		{
 			name:    "valid pattern with zero in regex context",
 			args:    args{pattern: "[A-Z]{0,44}"},
-			wantErr: true, // Zero used as quantifier value should not be allowed as it is not valid base58
+			wantErr: false, // Zero used as quantifier value should be allowed even though it is not valid base58
 		},
 		{
 			name:    "valid pattern with groups and alternation",
