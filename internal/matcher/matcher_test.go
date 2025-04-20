@@ -2,119 +2,127 @@ package matcher
 
 import (
 	"reflect"
-	"regexp"
 	"testing"
+	"time"
 
+	"github.com/dlclark/regexp2"
 	"github.com/tmlnv/sanity/internal/config"
 )
 
 func TestNewMatcher(t *testing.T) {
-	type args struct {
-		cfg config.Config
+	makeRE := func(p string) *regexp2.Regexp {
+		r := regexp2.MustCompile(p, regexp2.None)
+		r.MatchTimeout = time.Second
+		return r
 	}
+
 	tests := []struct {
 		name string
-		args args
+		cfg  config.Config
 		want *Matcher
 	}{
 		{
 			name: "empty config",
-			args: args{cfg: config.Config{}},
+			cfg:  config.Config{},
 			want: &Matcher{prefix: "", suffix: "", regexp: nil},
 		},
 		{
 			name: "config with prefix and suffix",
-			args: args{cfg: config.Config{Prefix: "ABC", Suffix: "XYZ"}},
+			cfg:  config.Config{Prefix: "ABC", Suffix: "XYZ"},
 			want: &Matcher{prefix: "ABC", suffix: "XYZ", regexp: nil},
 		},
 		{
 			name: "config with regexp",
-			args: args{cfg: config.Config{Regexp: "^[A-Za-z0-9]{44}$"}},
-			want: &Matcher{prefix: "", suffix: "", regexp: regexp.MustCompile("^[A-Za-z0-9]{44}$")},
+			cfg:  config.Config{Regexp: "^[A-Za-z0-9]{44}$"},
+			want: &Matcher{prefix: "", suffix: "", regexp: makeRE("^[A-Za-z0-9]{44}$")},
 		},
 		{
 			name: "config with all fields",
-			args: args{cfg: config.Config{Prefix: "ABC", Suffix: "XYZ", Regexp: "^ABC.*XYZ$"}},
-			want: &Matcher{prefix: "ABC", suffix: "XYZ", regexp: regexp.MustCompile("^ABC.*XYZ$")},
+			cfg:  config.Config{Prefix: "ABC", Suffix: "XYZ", Regexp: "^ABC.*XYZ$"},
+			want: &Matcher{prefix: "ABC", suffix: "XYZ", regexp: makeRE("^ABC.*XYZ$")},
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewMatcher(tt.args.cfg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewMatcher() = %v, want %v", got, tt.want)
+			got := NewMatcher(tt.cfg)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewMatcher() = %#v\nwant %#v", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestMatcher_Match(t *testing.T) {
-	type args struct {
-		address string
-	}
+	re44 := regexp2.MustCompile("^[1-9A-HJ-NP-Za-km-z]{44}$", regexp2.None)
+	re32 := regexp2.MustCompile("^[1-9A-HJ-NP-Za-km-z]{32}$", regexp2.None)
+
 	tests := []struct {
-		name string
-		m    *Matcher
-		args args
-		want bool
+		name    string
+		matcher *Matcher
+		addr    string
+		want    bool
 	}{
 		{
-			name: "empty matcher matches any address",
-			m:    &Matcher{},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: true,
+			name:    "empty matcher matches any address",
+			matcher: &Matcher{},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    true,
 		},
 		{
-			name: "prefix match",
-			m:    &Matcher{prefix: "5vG"},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: true,
+			name:    "prefix match",
+			matcher: &Matcher{prefix: "5vG"},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    true,
 		},
 		{
-			name: "prefix no match",
-			m:    &Matcher{prefix: "ABC"},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: false,
+			name:    "prefix no match",
+			matcher: &Matcher{prefix: "ABC"},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    false,
 		},
 		{
-			name: "suffix match",
-			m:    &Matcher{suffix: "AmR"},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: true,
+			name:    "suffix match",
+			matcher: &Matcher{suffix: "AmR"},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    true,
 		},
 		{
-			name: "suffix no match",
-			m:    &Matcher{suffix: "XYZ"},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: false,
+			name:    "suffix no match",
+			matcher: &Matcher{suffix: "XYZ"},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    false,
 		},
 		{
-			name: "regexp match",
-			m:    &Matcher{regexp: regexp.MustCompile("^[1-9A-HJ-NP-Za-km-z]{44}$")},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: true,
+			name:    "regexp match",
+			matcher: &Matcher{regexp: re44},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    true,
 		},
 		{
-			name: "regexp no match",
-			m:    &Matcher{regexp: regexp.MustCompile("^[1-9A-HJ-NP-Za-km-z]{32}$")},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: false,
+			name:    "regexp no match",
+			matcher: &Matcher{regexp: re32},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    false,
 		},
 		{
-			name: "all conditions match",
-			m:    &Matcher{prefix: "5vG", suffix: "AmR", regexp: regexp.MustCompile("^[1-9A-HJ-NP-Za-km-z]{44}$")},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: true,
+			name:    "all conditions match",
+			matcher: &Matcher{prefix: "5vG", suffix: "AmR", regexp: re44},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    true,
 		},
 		{
-			name: "all conditions no match - wrong prefix",
-			m:    &Matcher{prefix: "ABC", suffix: "AmR", regexp: regexp.MustCompile("^[1-9A-HJ-NP-Za-km-z]{44}$")},
-			args: args{address: "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR"},
-			want: false,
+			name:    "all conditions no match - wrong prefix",
+			matcher: &Matcher{prefix: "ABC", suffix: "AmR", regexp: re44},
+			addr:    "5vGRmNxXzZApNE8YwTuTxPzYdnmZ3GXio89hTF8VTAmR",
+			want:    false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.m.Match(tt.args.address); got != tt.want {
+			got := tt.matcher.Match(tt.addr)
+			if got != tt.want {
 				t.Errorf("Matcher.Match() = %v, want %v", got, tt.want)
 			}
 		})

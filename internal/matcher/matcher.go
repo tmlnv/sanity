@@ -11,7 +11,7 @@ import (
 type Matcher struct {
 	prefix string
 	suffix string
-	re     *regexp2.Regexp
+	regexp *regexp2.Regexp
 }
 
 func NewMatcher(cfg config.Config) *Matcher {
@@ -23,7 +23,7 @@ func NewMatcher(cfg config.Config) *Matcher {
 	return &Matcher{
 		prefix: cfg.Prefix,
 		suffix: cfg.Suffix,
-		re:     r,
+		regexp: r,
 	}
 }
 
@@ -34,8 +34,8 @@ func (m *Matcher) Match(address string) bool {
 	if m.suffix != "" && !strings.HasSuffix(address, m.suffix) {
 		return false
 	}
-	if m.re != nil {
-		ok, _ := m.re.MatchString(address)
+	if m.regexp != nil {
+		ok, _ := m.regexp.MatchString(address)
 		return ok
 	}
 	return true
