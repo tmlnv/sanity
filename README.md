@@ -3,8 +3,8 @@
 [![Build](https://github.com/tmlnv/sanity/actions/workflows/build.yml/badge.svg)](https://github.com/tmlnv/sanity/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/tmlnv/sanity/graph/badge.svg?token=PR3E1MGGRZ)](https://codecov.io/gh/tmlnv/sanity)
 
-Solana vanity address generator with a beautiful and intuitive CLI & TUI.
-Generate custom Solana wallet addresses with your desired prefix, suffix & regexp.
+Solana vanity address generator with CLI & TUI.
+Generate custom Solana wallet addresses with your desired prefix, suffix or regexp.
 
 ![demo_tui](https://tmlnv.com/sanity_demo.gif)
 
@@ -18,6 +18,8 @@ Generate custom Solana wallet addresses with your desired prefix, suffix & regex
 - Timeout configuration
 
 ## Installation
+
+You can install and run Sanity either by using Docker or by cloning the repository and building it directly.
 
 ### Using Docker
 
@@ -41,7 +43,36 @@ docker run -it --rm -v "$(pwd):/app" tmlnv/sanity:latest
 docker run --rm -v "$(pwd):/app" tmlnv/sanity:latest -prefix 333 -count 1
 ```
 
+### From Source
+
+To build and run from source, you need Go installed.
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/tmlnv/sanity.git
+cd sanity
+```
+
+2. Build the executable:
+
+```bash
+go build -o sanity .
+```
+
+3. Run the application:
+
+```bash
+# Run in TUI mode
+./sanity
+
+# Run in CLI mode with flags
+./sanity -prefix 333 -count 1
+```
+
 ## Usage
+
+Sanity can be used in two modes: TUI (Terminal User Interface) or CLI (Command Line Interface).
 
 ### TUI Mode
 
@@ -116,4 +147,4 @@ This tool is for educational and experimental purposes only. Please be aware tha
 - [x] Validate timeout from pure number for CLI
 - [x] Case sensitivity
 - [x] CLI help
-- [ ] Tests
+- [x] Tests
