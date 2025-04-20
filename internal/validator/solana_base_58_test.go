@@ -50,7 +50,7 @@ func TestValidateSolana(t *testing.T) {
 		},
 		{
 			name:    "valid regexp pattern",
-			args:    args{prefix: "", suffix: "", regexpPattern: "[A-Za-z0-9]+"},
+			args:    args{prefix: "", suffix: "", regexpPattern: "[A-Za-z1-9]+"},
 			wantErr: false,
 		},
 		{
@@ -133,12 +133,37 @@ func Test_validateRegexpPattern(t *testing.T) {
 		},
 		{
 			name:    "valid simple pattern",
-			args:    args{pattern: "[0-9]+"},
+			args:    args{pattern: "[1-9]+"},
 			wantErr: false,
 		},
 		{
 			name:    "valid complex pattern",
-			args:    args{pattern: "^[A-Za-z0-9]{10,20}$"},
+			args:    args{pattern: "^[A-HJ-NP-Za-km-np-z1-9]{10,20}$"},
+			wantErr: false, // Note: Uses proper base58 character range (no O, I, l, 0)
+		},
+		{
+			name:    "valid very complex pattern",
+			args:    args{pattern: "^(ABC|DEF)[123]{3,5}[a-km-zA-HJ-NP-Z]+(9|8)?[mn]?.*[XYZ]$"},
+			wantErr: false, // Fixed character classes
+		},
+		{
+			name:    "valid pattern with Solana-specific format",
+			args:    args{pattern: "^[1-9A-HJ-NP-Za-km-np-z]{10}(ABC|XYZ)[1-9]{5,10}$"},
+			wantErr: false,
+		},
+		{
+			name:    "valid pattern with character classes",
+			args:    args{pattern: "^[A-HJ-NP-Z]+[1-9]+[a-km-z]{44}$"},
+			wantErr: false, // Standard pattern without lookaheads
+		},
+		{
+			name:    "valid pattern with zero in regex context",
+			args:    args{pattern: "[A-Z]{0,44}"},
+			wantErr: false, // Zero used as quantifier value should be allowed even though it is not valid base58
+		},
+		{
+			name:    "valid pattern with groups and alternation",
+			args:    args{pattern: "^([1-9]{3}|[A-Z]{2})[a-z]+$"},
 			wantErr: false,
 		},
 		{
@@ -150,6 +175,16 @@ func Test_validateRegexpPattern(t *testing.T) {
 			name:    "invalid pattern - invalid quantifier",
 			args:    args{pattern: "a{-1}(nd1"},
 			wantErr: true,
+		},
+		{
+			name:    "invalid pattern - contains non-base58 character",
+			args:    args{pattern: "^[A-Z]hello_world$"},
+			wantErr: true, // Underscore is not in base58
+		},
+		{
+			name:    "invalid pattern - contains Unicode character",
+			args:    args{pattern: "ABC[1-9]×DEF"},
+			wantErr: true, // × (multiplication sign) is not a valid regex metachar or base58 char
 		},
 	}
 	for _, tt := range tests {

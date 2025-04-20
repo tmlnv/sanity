@@ -27,4 +27,5 @@ go.work.sum
 # custom
 *.log
 static/
+.DS_Store
 

@@ -19,16 +19,26 @@ Generate custom Solana wallet addresses with your desired prefix, suffix & regex
 
 ## Installation
 
+### Using Docker
+
+Pull the image from Docker Hub:
+
 ```bash
-go install github.com/tmlnv/sanity@latest
+docker pull tmlnv/sanity:latest
 ```
 
-Or clone and build from source:
+Run the application using Docker:
 
 ```bash
-git clone https://github.com/tmlnv/sanity.git
-cd sanity
-go build -o sanity ./cmd/sanity
+# To save generated keys to your current host directory, mounting a volume is necessary.
+# The default PrivateKeysFile is 'sanity.private.log' in the container's working directory.
+
+# Run in TUI mode (interactive)
+# Note: TUI rendering (colors, cursor) might vary depending on your terminal and Docker setup and not provide a full experience using Docker.
+docker run -it --rm -v "$(pwd):/app" tmlnv/sanity:latest
+
+# Run in CLI mode with flags
+docker run --rm -v "$(pwd):/app" tmlnv/sanity:latest -prefix 333 -count 1
 ```
 
 ## Usage
