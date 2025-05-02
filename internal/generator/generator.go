@@ -14,6 +14,8 @@ import (
 	"github.com/tmlnv/sanity/internal/saver"
 )
 
+// ─── Public types ──────────────────────────────────────────────────────────────
+
 type Stats struct {
 	Attempts uint64 // Total attempts across all workers
 	Found    uint64 // Total found addresses
@@ -26,109 +28,189 @@ type StatsUpdate struct {
 	IsFinished    bool
 }
 
-func Start(ctx context.Context, cfg config.Config, updateChan chan<- StatsUpdate, isTui bool) {
+// ─── Entry point ───────────────────────────────────────────────────────────────
+
+// Start launches the generator and blocks until the job is finished or the
+// supplied ctx is cancelled.
+func Start(
+	parentCtx context.Context,
+	cfg config.Config,
+	update chan<- StatsUpdate,
+	isTUI bool,
+) {
+	// Derived context so that the cancellation signal is owned here.
+	// Cancelling the parent will still propagate.
+	ctx, cancel := context.WithCancel(parentCtx)
+	defer cancel()
+
 	var (
-		wg            sync.WaitGroup
-		matcher       = matcher.NewMatcher(cfg)
-		totalFound    uint64
 		totalAttempts uint64
+		totalFound    uint64
+		m             = matcher.NewMatcher(cfg)
+		wg            sync.WaitGroup
 	)
 
-	// Ticker for periodic updates
-	ticker := time.NewTicker(500 * time.Millisecond) // Update every 500ms
-	defer ticker.Stop()
+	// ── Progress / UI updater ────────────────────────────────────────────────
+	if update != nil {
+		go progressTicker(ctx, update, &totalAttempts, &totalFound)
+	}
 
-	for i := 0; i < cfg.Concurrency; i++ {
+	// ── Periodic CLI logger  ─────────────────────────────────────────────────
+	if !isTUI && cfg.LogInterval > 0 {
 		wg.Add(1)
-		go worker(ctx, &wg, cfg, ticker, updateChan, &totalAttempts, &totalFound, matcher, isTui)
+		go logProgress(ctx, &wg, cfg.LogInterval, &totalAttempts, &totalFound)
+	}
+
+	// ── Workers ──────────────────────────────────────────────────────────────
+	for range cfg.Concurrency {
+		wg.Add(1)
+		go worker(ctx, &wg, cfg, m,
+			&totalAttempts, &totalFound,
+			update, cancel, isTUI)
 	}
 
 	wg.Wait()
-	if !isTui {
+
+	// ── Final stats to CLI + UI channel ──────────────────────────────────────
+	if !isTUI {
 		logger.Info("Generation completed",
 			"attempts", atomic.LoadUint64(&totalAttempts),
-			"found", totalFound,
-		)
+			"found", atomic.LoadUint64(&totalFound))
 	}
-
-	if updateChan != nil {
-		updateChan <- StatsUpdate{
+	if update != nil {
+		update <- StatsUpdate{
 			Stats: Stats{
 				Attempts: atomic.LoadUint64(&totalAttempts),
 				Found:    atomic.LoadUint64(&totalFound),
 			},
 			IsFinished: true,
 		}
-		close(updateChan)
+		close(update)
 	}
 }
 
-// In the worker function, remove sending IsFinished on cancellation
-func worker(ctx context.Context, wg *sync.WaitGroup, cfg config.Config, ticker *time.Ticker, updateChan chan<- StatsUpdate, totalAttempts *uint64, totalFound *uint64, matcher *matcher.Matcher, isTui bool) {
+// ─── Worker ───────────────────────────────────────────────────────────────────
+
+func worker(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	cfg config.Config,
+	m *matcher.Matcher,
+	totalAttempts, totalFound *uint64,
+	update chan<- StatsUpdate,
+	cancel context.CancelFunc,
+	isTUI bool,
+) {
 	defer wg.Done()
+
 	for {
 		select {
 		case <-ctx.Done():
-			if !isTui {
-				logger.Debug("Generation stopped due to cancellation", "Context", ctx)
-			}
-			return // Stop when context is canceled
-		case <-ticker.C:
-			// Send periodic update
-			if updateChan != nil {
-				updateChan <- StatsUpdate{
+			return
+		default:
+			wallet, addr := generate(totalAttempts)
+			if m.Match(addr) {
+				onMatch(addr, wallet, isTUI, totalFound, update)
+				// **Single exit decision point**
+				if cfg.NumAddresses > 0 && atomic.LoadUint64(totalFound) >= uint64(cfg.NumAddresses) {
+					cancel()
+				}
+			} else if update != nil && isTUI {
+				update <- StatsUpdate{
 					Stats: Stats{
 						Attempts: atomic.LoadUint64(totalAttempts),
 						Found:    atomic.LoadUint64(totalFound),
 					},
+					LastGenerated: addr,
 				}
-			}
-		default:
-			generateAndCheck(matcher, updateChan, totalFound, totalAttempts, isTui)
-			if cfg.NumAddresses > 0 && atomic.LoadUint64(totalFound) >= uint64(cfg.NumAddresses) {
-				if !isTui {
-					logger.Debug("Desired count reached - stopping generation")
-				}
-				return
 			}
 		}
 	}
 }
 
-func generateAndCheck(m *matcher.Matcher, updateChan chan<- StatsUpdate, totalFound *uint64, totalAttempts *uint64, isTui bool) {
-	var stats StatsUpdate
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
+// generate returns the new wallet and address
+func generate(totalAttempts *uint64) (*solana.Wallet, string) {
 	wallet := solana.NewWallet()
 	address := wallet.PublicKey().String()
-
 	atomic.AddUint64(totalAttempts, 1)
-	count := atomic.LoadUint64(totalFound)
-	attempts := atomic.LoadUint64(totalAttempts)
+	return wallet, address
+}
 
-	stats.Stats = Stats{
-		Attempts: attempts,
-		Found:    count,
+// Handles everything that should happen once a match is found.
+func onMatch(
+	addr string,
+	wallet *solana.Wallet,
+	isTUI bool,
+	totalFound *uint64,
+	update chan<- StatsUpdate,
+) {
+	n := atomic.AddUint64(totalFound, 1)
+
+	// persistant saving first
+	saver.SaveKeyPair(addr, wallet.PrivateKey.String())
+
+	if !isTUI {
+		logger.Info("Vanity address found",
+			"address", addr,
+			"sequence", n)
 	}
-	stats.LastGenerated = address
 
-	if m.Match(address) {
-
-		count = atomic.AddUint64(totalFound, 1)
-		stats.Stats.Found = count
-		stats.LastMatch = address
-
-		saver.SaveKeyPair(address, wallet.PrivateKey.String())
-
-		if !isTui {
-			logger.Info("Vanity address found",
-				"address", address,
-				"attempts", attempts,
-			)
+	if update != nil {
+		update <- StatsUpdate{
+			Stats: Stats{
+				Attempts: 0, // will be populated by progressTicker
+				Found:    n,
+			},
+			LastMatch: addr,
 		}
 	}
+}
 
-	if updateChan != nil {
-		// Send update before checking for exit condition
-		updateChan <- stats
+// Emits periodic updates to the UI *and* keeps Attempts / Found fresh.
+func progressTicker(
+	ctx context.Context,
+	update chan<- StatsUpdate,
+	totalAttempts, totalFound *uint64,
+) {
+	t := time.NewTicker(500 * time.Millisecond)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			update <- StatsUpdate{
+				Stats: Stats{
+					Attempts: atomic.LoadUint64(totalAttempts),
+					Found:    atomic.LoadUint64(totalFound),
+				},
+			}
+		}
+	}
+}
+
+// Periodic CLI logger (for non‑TUI mode).
+func logProgress(
+	ctx context.Context,
+	wg *sync.WaitGroup,
+	interval time.Duration,
+	totalAttempts, totalFound *uint64,
+) {
+	defer wg.Done()
+	t := time.NewTicker(interval)
+	defer t.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-t.C:
+			logger.Info("Progress update",
+				"attempts", atomic.LoadUint64(totalAttempts),
+				"found", atomic.LoadUint64(totalFound))
+		}
 	}
 }

@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/tmlnv/sanity/internal/config"
 	"github.com/tmlnv/sanity/internal/logger"
@@ -30,6 +31,7 @@ func TestParseFlags(t *testing.T) {
 			want: config.Config{
 				NumAddresses:    1,
 				Concurrency:     runtime.NumCPU(),
+				LogInterval:     time.Hour,
 				LogFile:         config.LogFile,
 				PrivateKeysFile: config.PrivateKeysFile,
 			},
@@ -42,6 +44,7 @@ func TestParseFlags(t *testing.T) {
 				Suffix:          "XYZ",
 				NumAddresses:    1,
 				Concurrency:     runtime.NumCPU(),
+				LogInterval:     time.Hour,
 				LogFile:         config.LogFile,
 				PrivateKeysFile: config.PrivateKeysFile,
 				FlagsProvided:   true,
@@ -54,6 +57,7 @@ func TestParseFlags(t *testing.T) {
 				Regexp:          "^[A-Za-z0-9]{44}$",
 				NumAddresses:    1,
 				Concurrency:     runtime.NumCPU(),
+				LogInterval:     time.Hour,
 				LogFile:         config.LogFile,
 				PrivateKeysFile: config.PrivateKeysFile,
 				FlagsProvided:   true,
@@ -68,6 +72,7 @@ func TestParseFlags(t *testing.T) {
 				Regexp:          "^ABC.*XYZ$",
 				NumAddresses:    1,
 				Concurrency:     runtime.NumCPU(),
+				LogInterval:     time.Hour,
 				LogFile:         config.LogFile,
 				PrivateKeysFile: config.PrivateKeysFile,
 				FlagsProvided:   true,

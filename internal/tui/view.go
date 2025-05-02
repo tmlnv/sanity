@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -71,7 +72,11 @@ func (m Model) generationView() string {
 	var b strings.Builder
 	// Using spinner.View() directly without newline to preserve animation
 	b.WriteString(mainStyle.Render(m.spinner.View() + "Generating addresses...\n\n"))
-	b.WriteString(mainStyle.Render(m.config.String()) + "\n")
+
+	// Remove LogInterval from config repr
+	re := regexp.MustCompile(`(?m)^LogInterval: .*\n`)
+	configStr := re.ReplaceAllString(m.config.String(), "")
+	b.WriteString(mainStyle.Render(configStr + "\n"))
 
 	if len(m.lastGenerated) > 0 {
 		for _, addr := range m.lastGenerated {
@@ -109,7 +114,7 @@ func (m Model) finishedView() string {
 		}
 	}
 
-	b.WriteString(fmt.Sprintf("\nCorresponding private keys were written to %v\n", config.PrivateKeysFile))
+	b.WriteString(fmt.Sprintf("\nCorresponding private keys were saved to %v\n", config.PrivateKeysFile))
 
 	return lipgloss.NewStyle().
 		Padding(1, 2).

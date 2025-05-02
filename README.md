@@ -148,3 +148,5 @@ This tool is for educational and experimental purposes only. Please be aware tha
 - [x] Case sensitivity
 - [x] CLI help
 - [x] Tests
+- [ ] TUI Running timer
+- [ ] Check if prefix/suffix do not conflict with regexp

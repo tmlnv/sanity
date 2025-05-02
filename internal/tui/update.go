@@ -49,7 +49,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return r(msg)
 }
 
-// Add this helper method to handle final updates
 func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 	m.stats = update.Stats
 	if update.LastGenerated != "" {
@@ -66,7 +65,7 @@ func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 	if update.IsFinished {
 		m.state = isFinished
 		if m.cancel != nil {
-			m.cancel() // Properly cancel context
+			m.cancel()
 		}
 		return tea.Quit
 	}
@@ -74,7 +73,6 @@ func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 	return m.listenForUpdates()
 }
 
-// Update the updateGeneration case
 func (m Model) updateGeneration(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case generator.StatsUpdate:

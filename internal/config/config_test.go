@@ -32,6 +32,7 @@ func TestConfig_String(t *testing.T) {
 				"NumAddresses: 10",
 				"Concurrency: 4",
 				"Timeout: 5s",
+				"LogInterval: 0s",
 				"LogFile: test.log",
 				"PrivateKeysFile: private.log",
 			},
@@ -46,8 +47,18 @@ func TestConfig_String(t *testing.T) {
 				"NumAddresses: 0",
 				"Concurrency: 0",
 				"Timeout: 0s",
+				"LogInterval: 0s",
 				"LogFile: ",
 				"PrivateKeysFile: ",
+			},
+		},
+		{
+			name: "config with log interval",
+			cfg: Config{
+				LogInterval: 10 * time.Minute,
+			},
+			want: []string{
+				"LogInterval: 10m0s",
 			},
 		},
 	}

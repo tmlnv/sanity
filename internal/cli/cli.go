@@ -15,7 +15,7 @@ import (
 
 func ParseFlags() config.Config {
 	var cfg config.Config
-	var timeoutStr string
+	var timeoutStr, logIntervalStr string
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Sanity - Solana Vanity Address Generator\n\n")
@@ -23,9 +23,9 @@ func ParseFlags() config.Config {
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nExamples:\n")
-		fmt.Fprintf(os.Stderr, "  Generate an address with prefix 'sol':\n    $ sanity -prefix sol\n\n")
-		fmt.Fprintf(os.Stderr, "  Generate 5 addresses with suffix 'eth':\n    $ sanity -suffix eth -count 5\n\n")
-		fmt.Fprintf(os.Stderr, "  Generate addresses matching regexp with timeout:\n    $ sanity -regex '^sol.*eth$' -timeout 5m\n")
+		fmt.Fprintf(os.Stderr, "  Generate an address with prefix '333':\n    $ sanity -prefix 333\n\n")
+		fmt.Fprintf(os.Stderr, "  Generate 5 addresses with suffix '333':\n    $ sanity -suffix 333 -count 5\n\n")
+		fmt.Fprintf(os.Stderr, "  Generate addresses matching regexp with timeout:\n    $ sanity -regex '^333.*333$' -timeout 5m\n")
 	}
 
 	flag.StringVar(&cfg.Prefix, "prefix", "", "Vanity prefix for Solana address")
@@ -34,6 +34,7 @@ func ParseFlags() config.Config {
 	flag.IntVar(&cfg.NumAddresses, "count", 1, "Number of addresses to find (0=infinite)")
 	flag.IntVar(&cfg.Concurrency, "workers", 0, "Number of workers (0=auto)")
 	flag.StringVar(&timeoutStr, "timeout", "0", "Maximum search duration (e.g., 30s, 5m, or number of seconds)")
+	flag.StringVar(&logIntervalStr, "log-interval", "1h", "Interval for periodic progress logging in CLI mode (e.g., 10m, 1h, 0 to disable)")
 	flag.StringVar(&cfg.LogFile, "logfile", config.LogFile, "Path to log file")
 	flag.StringVar(&cfg.PrivateKeysFile, "private-keys", config.PrivateKeysFile, "Path to private keys file")
 	showVersion := flag.Bool("version", false, "Show version information")
@@ -58,6 +59,15 @@ func ParseFlags() config.Config {
 		cfg.Timeout = duration
 	}
 
+	// Validate and parse log interval
+	if duration, err := validator.ValidateTimeout(logIntervalStr); err != nil {
+		// fmt.Printf instead of logger.Error because logger is not initialized yet
+		fmt.Fprintf(os.Stderr, "Error parsing log interval: %v\n", err)
+		os.Exit(1)
+	} else {
+		cfg.LogInterval = duration
+	}
+
 	cfg.FlagsProvided = flag.NFlag() > 0
 	return cfg
 }
@@ -78,6 +88,7 @@ func RunCLI(cfg config.Config) {
 		"regexp", cfg.Regexp,
 		"workers", cfg.Concurrency,
 		"timeout", cfg.Timeout,
+		"logInterval", cfg.LogInterval,
 	)
 
 	generator.Start(ctx, cfg, nil, false)
