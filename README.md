@@ -96,7 +96,7 @@ Use Tab/Shift+Tab or Up/Down arrows to navigate between fields.
 Run with flags for CLI mode:
 
 ```bash
-./sanity [-prefix <prefix>] [-suffix <suffix>] [-regexp <pattern>] [-count <number>] [-workers <workers>] [-timeout <duration>]
+./sanity [-prefix <prefix>] [-suffix <suffix>] [-regexp <pattern>] [-count <number>] [-workers <workers>] [-timeout <duration>] [-log-interval <duration>] [-private-keys <file>]
 ```
 
 Examples:
@@ -123,6 +123,9 @@ Options:
 - `-count`: Number of addresses to generate (default: 1)
 - `-workers`: Number of concurrent workers (default: CPU cores)
 - `-timeout`: Maximum duration to search (e.g., "30s", "5m", "1h")
+- `-log-interval`: Interval for periodic progress logging in CLI mode
+  (e.g., "30s", "5m", "1h")
+- `-private-keys`: File to save generated private keys
 
 ## Security
 
