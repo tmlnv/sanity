@@ -57,7 +57,7 @@ cd sanity
 2. Build the executable:
 
 ```bash
-go build -o sanity .
+go build -o sanity ./cmd/sanity
 ```
 
 3. Run the application:
