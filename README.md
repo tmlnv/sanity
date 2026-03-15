@@ -54,7 +54,7 @@ git clone https://github.com/tmlnv/sanity.git
 cd sanity
 ```
 
-2. Build the executable:
+2. Build the executable (this will automatically download dependencies):
 
 ```bash
 go build -o sanity ./cmd/sanity
