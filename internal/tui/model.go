@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"runtime"
+	"time"
 
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/textinput"
@@ -33,6 +34,8 @@ type Model struct {
 	lastGenerated []string
 	matched       []string
 	err           error
+	startedAt     time.Time
+	elapsed       time.Duration
 	updateChan    chan generator.StatsUpdate
 	cancel        context.CancelFunc
 }
@@ -82,6 +85,8 @@ func InitialModel() Model {
 
 func (m *Model) startGeneration() {
 	m.state = isGenerating
+	m.startedAt = time.Now()
+	m.elapsed = 0
 
 	ctx, cancel := ctx.CreateContext(m.config)
 
