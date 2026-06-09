@@ -107,6 +107,9 @@ func TestModel_View(t *testing.T) {
 				if !strings.Contains(got, "Found: 2") {
 					t.Error("Missing found count")
 				}
+				if !strings.Contains(got, "Elapsed:") {
+					t.Error("Missing elapsed timer")
+				}
 				if !strings.Contains(got, "• matched1") {
 					t.Error("Missing matched address")
 				}
@@ -129,7 +132,8 @@ func TestModel_View(t *testing.T) {
 				want := lipgloss.NewStyle().Padding(1, 2).Render(
 					"Finished\n\n" +
 						"Attempts: 200\n" +
-						"Found: 3\n\n" +
+						"Found: 3\n" +
+						"Elapsed: 00:00:00\n\n" +
 						"Found addresses:\n" +
 						"• addr1\n" +
 						"• addr2\n" +
@@ -274,6 +278,9 @@ func TestModel_generationView(t *testing.T) {
 				if !strings.Contains(got, "Found: 0") {
 					t.Error("Missing found count")
 				}
+				if !strings.Contains(got, "Elapsed:") {
+					t.Error("Missing elapsed timer")
+				}
 				if !strings.Contains(got, "Press Esc or Ctrl+C to exit") {
 					t.Error("Missing exit instructions")
 				}
@@ -305,6 +312,9 @@ func TestModel_generationView(t *testing.T) {
 				}
 				if !strings.Contains(got, "Found: 2") {
 					t.Error("Missing found count")
+				}
+				if !strings.Contains(got, "Elapsed:") {
+					t.Error("Missing elapsed timer")
 				}
 				if !strings.Contains(got, "• matched1") || !strings.Contains(got, "• matched2") {
 					t.Error("Missing matched addresses")
@@ -365,7 +375,8 @@ func TestModel_finishedView(t *testing.T) {
 			want: lipgloss.NewStyle().Padding(1, 2).Render(
 				"Finished\n\n" +
 					"Attempts: 100\n" +
-					"Found: 0\n\n" +
+					"Found: 0\n" +
+					"Elapsed: 00:00:00\n\n" +
 					fmt.Sprintf("Corresponding private keys were saved to %v\n", config.PrivateKeysFile)),
 		},
 		{
@@ -380,7 +391,8 @@ func TestModel_finishedView(t *testing.T) {
 			want: lipgloss.NewStyle().Padding(1, 2).Render(
 				"Finished\n\n" +
 					"Attempts: 200\n" +
-					"Found: 3\n\n" +
+					"Found: 3\n" +
+					"Elapsed: 00:00:00\n\n" +
 					"Found addresses:\n" +
 					"• addr1\n" +
 					"• addr2\n" +

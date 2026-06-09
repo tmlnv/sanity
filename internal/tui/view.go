@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -68,6 +69,24 @@ func (m Model) configView() string {
 	return lipgloss.NewStyle().Padding(1, 2).Render(b.String())
 }
 
+func (m Model) elapsedDuration() time.Duration {
+	if m.startedAt.IsZero() {
+		return m.elapsed
+	}
+	return time.Since(m.startedAt).Truncate(time.Second)
+}
+
+func formatElapsed(d time.Duration) string {
+	if d < 0 {
+		d = 0
+	}
+	totalSeconds := int(d.Seconds())
+	hours := totalSeconds / 3600
+	minutes := (totalSeconds % 3600) / 60
+	seconds := totalSeconds % 60
+	return fmt.Sprintf("%02d:%02d:%02d", hours, minutes, seconds)
+}
+
 func (m Model) generationView() string {
 	var b strings.Builder
 	// Using spinner.View() directly without newline to preserve animation
@@ -87,6 +106,7 @@ func (m Model) generationView() string {
 
 	b.WriteString(mainStyle.Render("Attempts: " + strconv.Itoa(int(m.stats.Attempts)) + "\n"))
 	b.WriteString(mainStyle.Render(fmt.Sprintf("Found: %d\n", m.stats.Found)))
+	b.WriteString(mainStyle.Render("Elapsed: " + formatElapsed(m.elapsedDuration()) + "\n"))
 	if len(m.matched) > 0 {
 		b.WriteString("\nFound addresses:\n")
 		for _, addr := range m.matched {
@@ -106,6 +126,7 @@ func (m Model) finishedView() string {
 	b.WriteString("Finished\n\n")
 	b.WriteString(fmt.Sprintf("Attempts: %d\n", m.stats.Attempts))
 	b.WriteString(fmt.Sprintf("Found: %d\n", m.stats.Found))
+	b.WriteString(fmt.Sprintf("Elapsed: %s\n", formatElapsed(m.elapsedDuration())))
 
 	if len(m.matched) > 0 {
 		b.WriteString("\nFound addresses:\n")

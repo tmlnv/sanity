@@ -64,6 +64,8 @@ func (m *Model) handleStatsUpdate(update generator.StatsUpdate) tea.Cmd {
 
 	if update.IsFinished {
 		m.state = isFinished
+		m.elapsed = m.elapsedDuration()
+		m.startedAt = time.Time{}
 		if m.cancel != nil {
 			m.cancel()
 		}
@@ -108,7 +110,7 @@ func (m *Model) updateInputs(msg tea.Msg) (tea.Model, tea.Cmd) {
 					m.err = err
 					return m, nil
 				}
-				go m.startGeneration()
+				m.startGeneration()
 				return m, tea.Batch(
 					m.spinner.Tick,
 					m.listenForUpdates(),
